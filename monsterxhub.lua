@@ -2,23 +2,9 @@ if not game:IsLoaded() then
     repeat task.wait() until game:IsLoaded()
 end
 
-if setfpscap then
-    setfpscap(1000000)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Nullix Hub",
-        Text = "FPS Unlocked!",
-        Duration = 5,
-        Button1 = "Okay"
-    })
-    warn("FPS Unlocked!")
-else
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Nullix Hub",
-        Text = "Your exploit does not support setfpscap.",
-        Duration = 5,
-        Button1 = "Okay"
-    })
-    warn("Your exploit does not support setfpscap.")
+-- Xóa UI cũ để tránh lỗi không tắt được hoặc bị đè nhiều cái
+if game:GetService("CoreGui"):FindFirstChild("WindUI") then
+    game:GetService("CoreGui")["WindUI"]:Destroy()
 end
 
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
@@ -39,14 +25,23 @@ local Window = WindUI:CreateWindow({
         Anonymous = false
     },
 });
+
+-- PHẦN SỬA LỖI BẬT TẮT CHO PC
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    -- Nhấn Ctrl trái để bật/tắt
+    if input.KeyCode == Enum.KeyCode.LeftControl then 
+        Window:Toggle()
+    end
+end)
+
 Window:EditOpenButton({
-    Title = "Nullix Hub - MOD LẠI MENU",
-    Icon = "monitor",
-    CornerRadius = UDim.new(0, 6),
-    StrokeThickness = 2,
-    Color = ColorSequence.new(Color3.fromRGB(30, 30, 30), Color3.fromRGB(255, 255, 255)),
-    Draggable = true
-});
+    Title = "Nullix Hub - Open",
+    Icon = "rbxassetid://115375388153325",
+    CornerRadius = UDim2.fromOffset(0, 10),
+    Enabled = true, -- Nếu thấy vướng thì đổi thành false vì đã có phím Ctrl để mở
+})
 local Tabs = {
     InfoTab = Window:Tab({
         Title = "Discord",
