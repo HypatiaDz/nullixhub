@@ -28,18 +28,27 @@ local Window = WindUI:CreateWindow({
 
 -- SỬA LỖI MẤT MENU TRÊN PC
 local UserInputService = game:GetService("UserInputService")
-local isHidden = false
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
-    if input.KeyCode == Enum.KeyCode.LeftControl then 
-        isHidden = not isHidden
-        -- Ép trạng thái hiển thị của ScreenGui chính
-        local ui = coreGui:FindFirstChild("WindUI")
-        if ui then
-            ui.Enabled = not isHidden
-        else
+    
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        -- 1. Gọi lệnh Toggle của thư viện
+        if Window then
             Window:Toggle()
+        end
+        
+        -- 2. Ép hiển thị nếu nó bị kẹt ở trạng thái thu nhỏ (Minimize)
+        local coreGui = game:GetService("CoreGui")
+        local mainUI = coreGui:FindFirstChild("WindUI") or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("WindUI")
+        
+        if mainUI then
+            mainUI.Enabled = true -- Buộc ScreenGui phải bật
+            -- Tìm cái Frame chính để đưa nó về giữa màn hình nếu lỡ bị bay mất
+            local mainFrame = mainUI:FindFirstChildWhichIsA("Frame", true)
+            if mainFrame then
+                mainFrame.Visible = true
+            end
         end
     end
 end)
