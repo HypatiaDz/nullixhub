@@ -2,17 +2,20 @@ if not game:IsLoaded() then
     repeat task.wait() until game:IsLoaded()
 end
 
--- Xóa UI cũ để tránh lỗi không tắt được hoặc bị đè nhiều cái
-if game:GetService("CoreGui"):FindFirstChild("WindUI") then
-    game:GetService("CoreGui")["WindUI"]:Destroy()
-end
+-- Tên Folder của bạn
+local folderName = "Nullix Hub"
+
+-- Xóa UI cũ triệt để trước khi chạy bản mới
+local coreGui = game:GetService("CoreGui")
+if coreGui:FindFirstChild("WindUI") then coreGui["WindUI"]:Destroy() end
+if coreGui:FindFirstChild(folderName) then coreGui[folderName]:Destroy() end
 
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub [PREMIUM]",
     Icon = "rbxassetid://115375388153325",
     Author = "Owner: Mhuy",
-    Folder = "Nullix Hub",
+    Folder = folderName,
     Size = UDim2.fromOffset(550, 300),
     Transparent = true,
     Theme = "Dark",
@@ -20,27 +23,31 @@ local Window = WindUI:CreateWindow({
     HasOutline = false,
     HideSearchBar = true,
     ScrollBarEnabled = false,
-    User = {
-        Enabled = true,
-        Anonymous = false
-    },
+    User = { Enabled = true, Anonymous = false },
 });
 
--- PHẦN SỬA LỖI BẬT TẮT CHO PC
+-- SỬA LỖI MẤT MENU TRÊN PC
 local UserInputService = game:GetService("UserInputService")
+local isHidden = false
+
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
-    -- Nhấn Ctrl trái để bật/tắt
     if input.KeyCode == Enum.KeyCode.LeftControl then 
-        Window:Toggle()
+        isHidden = not isHidden
+        -- Ép trạng thái hiển thị của ScreenGui chính
+        local ui = coreGui:FindFirstChild("WindUI")
+        if ui then
+            ui.Enabled = not isHidden
+        else
+            Window:Toggle()
+        end
     end
 end)
 
 Window:EditOpenButton({
-    Title = "Nullix Hub - Open",
+    Title = "Open Menu",
     Icon = "rbxassetid://115375388153325",
-    CornerRadius = UDim2.fromOffset(0, 10),
-    Enabled = true, -- Nếu thấy vướng thì đổi thành false vì đã có phím Ctrl để mở
+    Enabled = true, -- Trên PC nút này đôi khi bị lỗi, hãy dùng Left Ctrl
 })
 local Tabs = {
     InfoTab = Window:Tab({
