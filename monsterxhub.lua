@@ -5,7 +5,7 @@ end
 if setfpscap then
     setfpscap(1000000)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Cai Dù 1m82",
+        Title = "Nullix Hub",
         Text = "FPS Unlocked!",
         Duration = 5,
         Button1 = "Okay"
@@ -13,7 +13,7 @@ if setfpscap then
     warn("FPS Unlocked!")
 else
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Cai Dù 1m82",
+        Title = "Nullix Hub",
         Text = "Your exploit does not support setfpscap.",
         Duration = 5,
         Button1 = "Okay"
@@ -23,10 +23,10 @@ end
 
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
-    Title = "Cai Dù 1m82 [PREMIUM]",
-    Icon = "rbxassetid://133786721407992",
-    Author = "Owner: gunicloud",
-    Folder = "Cai Dù 1m82_BF",
+    Title = "Nullix Hub [PREMIUM]",
+    Icon = "rbxassetid://115375388153325",
+    Author = "Owner: Mhuy",
+    Folder = "Nullix Hub",
     Size = UDim2.fromOffset(550, 300),
     Transparent = true,
     Theme = "Dark",
@@ -40,7 +40,7 @@ local Window = WindUI:CreateWindow({
     },
 });
 Window:EditOpenButton({
-    Title = "Cai Dù 1m82 - MOD LẠI MENU",
+    Title = "Nullix Hub - MOD LẠI MENU",
     Icon = "monitor",
     CornerRadius = UDim.new(0, 6),
     StrokeThickness = 2,
