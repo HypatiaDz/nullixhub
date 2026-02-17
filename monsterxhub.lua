@@ -1,14 +1,8 @@
-if not game:IsLoaded() then
-    repeat task.wait() until game:IsLoaded()
-end
-
--- Tên Folder của bạn
+local UserInputService = game:GetService("UserInputService")
 local folderName = "Nullix Hub"
 
--- Xóa UI cũ triệt để trước khi chạy bản mới
-local coreGui = game:GetService("CoreGui")
-if coreGui:FindFirstChild("WindUI") then coreGui["WindUI"]:Destroy() end
-if coreGui:FindFirstChild(folderName) then coreGui[folderName]:Destroy() end
+-- 1. Xóa bản cũ để tránh lỗi chồng UI
+if game:GetService("CoreGui"):FindFirstChild("WindUI") then game:GetService("CoreGui")["WindUI"]:Destroy() end
 
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
@@ -26,37 +20,29 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 });
 
--- SỬA LỖI MẤT MENU TRÊN PC
-local UserInputService = game:GetService("UserInputService")
-
+-- 2. FIX LỖI THU NHỎ MẤT MENU TRÊN PC
+-- Code này giúp bạn nhấn Left Control là menu hiện lại ngay lập tức
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     
     if input.KeyCode == Enum.KeyCode.LeftControl then
-        -- 1. Gọi lệnh Toggle của thư viện
         if Window then
-            Window:Toggle()
-        end
-        
-        -- 2. Ép hiển thị nếu nó bị kẹt ở trạng thái thu nhỏ (Minimize)
-        local coreGui = game:GetService("CoreGui")
-        local mainUI = coreGui:FindFirstChild("WindUI") or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("WindUI")
-        
-        if mainUI then
-            mainUI.Enabled = true -- Buộc ScreenGui phải bật
-            -- Tìm cái Frame chính để đưa nó về giữa màn hình nếu lỡ bị bay mất
-            local mainFrame = mainUI:FindFirstChildWhichIsA("Frame", true)
-            if mainFrame then
-                mainFrame.Visible = true
+            Window:Toggle() -- Lệnh đóng/mở chính thức của WindUI
+            
+            -- Ép hiển thị nếu lệnh Toggle bị kẹt do thu nhỏ
+            local mainUI = game:GetService("CoreGui"):FindFirstChild("WindUI")
+            if mainUI then
+                mainUI.Enabled = true
             end
         end
     end
 end)
 
+-- 3. Chỉnh nút mở cho chắc chắn
 Window:EditOpenButton({
-    Title = "Open Menu",
+    Title = "Open Nullix",
     Icon = "rbxassetid://115375388153325",
-    Enabled = true, -- Trên PC nút này đôi khi bị lỗi, hãy dùng Left Ctrl
+    Enabled = true, -- Luôn bật nút này để dự phòng
 })
 local Tabs = {
     InfoTab = Window:Tab({
