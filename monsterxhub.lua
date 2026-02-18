@@ -2,18 +2,18 @@ if not game:IsLoaded() then
     repeat task.wait() until game:IsLoaded()
 end
 
--- 1. CHỐNG CRASH: Giới hạn FPS về mức an toàn (Quan trọng cho PC)
+-- 1. FIX CRASH (PC rất hay văng vì dòng 1tr FPS, mình chỉnh về 144)
 if setfpscap then setfpscap(144) end
 
--- 2. DỌN DẸP: Xóa sạch bản cũ để không bị lỗi chồng UI
+-- 2. DỌN DẸP UI CŨ
 local CoreGui = game:GetService("CoreGui")
 if CoreGui:FindFirstChild("WindUI") then CoreGui["WindUI"]:Destroy() end
-if CoreGui:FindFirstChild("NullixFixPC") then CoreGui["NullixFixPC"]:Destroy() end
+if CoreGui:FindFirstChild("FixMenuPC") then CoreGui["FixMenuPC"]:Destroy() end
 
--- 3. LOAD THƯ VIỆN
+-- 3. LOAD THƯ VIỆN WINDUI
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub [FIX PC]",
+    Title = "Nullix Hub [PC FIXED]",
     Icon = "rbxassetid://115375388153325",
     Author = "Owner: Mhuy",
     Folder = "Nullix Hub",
@@ -27,35 +27,36 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 });
 
--- 4. TỰ TẠO NÚT BẬT LẠI (Dành riêng cho PC khi nhấn dấu -)
+-- 4. TỰ TẠO NÚT BẬT/TẮT RIÊNG (NÚT NÀY KHÔNG BAO GIỜ MẤT)
 local ScreenGui = Instance.new("ScreenGui")
 local OpenButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
-ScreenGui.Name = "NullixFixPC"
+ScreenGui.Name = "FixMenuPC"
 ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 OpenButton.Name = "OpenButton"
 OpenButton.Parent = ScreenGui
-OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-OpenButton.BackgroundTransparency = 0.3
-OpenButton.Position = UDim2.new(0, 10, 0.4, 0) -- Nằm bên trái màn hình
-OpenButton.Size = UDim2.new(0, 70, 0, 30)
+OpenButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+OpenButton.BackgroundTransparency = 0.2
+OpenButton.Position = UDim2.new(0, 10, 0.4, 0) -- Nằm mép trái màn hình
+OpenButton.Size = UDim2.new(0, 80, 0, 35)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.Text = "OPEN HUB"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.TextSize = 12
-OpenButton.Draggable = true -- Bạn có thể lấy chuột kéo nó đi chỗ khác
+OpenButton.TextSize = 13
+OpenButton.Draggable = true -- Có thể dùng chuột kéo đi nếu vướng
 
 UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = OpenButton
 
--- Lệnh bấm nút tự tạo để mở lại menu
+-- Khi bấm nút này thì Menu hiện/ẩn
 OpenButton.MouseButton1Click:Connect(function()
     Window:Toggle()
 end)
 
--- 5. PHÍM TẮT DỰ PHÒNG (Bấm Ctrl trái là hiện)
+-- 5. PHÍM TẮT CTRL TRÁI ĐỂ BẬT/TẮT
 local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
@@ -64,15 +65,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- Tắt nút mặc định của WindUI (vì nó hay bị lỗi mất trên PC)
+-- Tắt cái nút Open mặc định bị lỗi của WindUI
 Window:EditOpenButton({ Enabled = false })
-
--- THÔNG BÁO ĐÃ CHẠY THÀNH CÔNG
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Nullix Hub",
-    Text = "Đã chạy! Bấm nút OPEN bên trái hoặc CTRL để mở.",
-    Duration = 5
-})
 
 local Tabs = {
     InfoTab = Window:Tab({
