@@ -10869,58 +10869,47 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
 end
 local RunService = game:GetService("RunService")
 
--- PHẦN ATTACK HOÀN HẢO: QUÁI XẾP VÒNG TRÒN + MENU SIÊU MƯỢT + ĐÁNH MẤT MÁU
+--- PHẦN ATTACK TỐI THƯỢNG: GOM 1 CỤC SÂU DƯỚI CHÂN + KHÔNG MẤT MÁU + MENU MƯỢT
 local RunService = game:GetService("RunService")
 
--- LUỒNG 1: GOM QUÁI XẾP THÀNH VÒNG TRÒN (Trị dứt điểm vụ quái văng tá lả)
+-- LUỒNG 1: GOM 1 CỤC CÁCH XA 15 MÉT (AN TOÀN TUYỆT ĐỐI)
 task.spawn(function()
     RunService.Heartbeat:Connect(function() 
         local char = game.Players.LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
-        -- Lấy danh sách quái ở gần
-        local enemies = {}
         for _, v in ipairs(workspace.Enemies:GetChildren()) do
             local hrp = v:FindFirstChild("HumanoidRootPart")
             local hum = v:FindFirstChild("Humanoid")
+            
             if hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
-                table.insert(enemies, v)
-            end
-        end
-
-        -- Gom và xếp quái
-        for i, v in ipairs(enemies) do
-            pcall(function()
-                local hrp = v:FindFirstChild("HumanoidRootPart")
-                local hum = v:FindFirstChild("Humanoid")
-                
-                hum.PlatformStand = true 
-                hum.WalkSpeed = 0
-                hum.JumpPower = 0
-                
-                for _, part in ipairs(v:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                        part.Velocity = Vector3.new(0, 0, 0)
-                        part.RotVelocity = Vector3.new(0, 0, 0)
+                pcall(function()
+                    -- Làm liệt vật lý hoàn toàn (Tụi nó đè lên nhau sẽ không bị văng)
+                    hum.PlatformStand = true 
+                    hum.WalkSpeed = 0
+                    hum.JumpPower = 0
+                    
+                    for _, part in ipairs(v:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                            part.Velocity = Vector3.new(0, 0, 0)
+                            part.RotVelocity = Vector3.new(0, 0, 0)
+                        end
                     end
-                end
-                
-                -- MA GIÁO MỚI: Xếp quái thành một vòng tròn quanh chân bạn (Bán kính 3 mét)
-                -- Tụi nó sẽ không đè lên nhau nữa -> Tuyệt đối không bao giờ nảy hay văng!
-                local angle = (i / #enemies) * math.pi * 2
-                local offset = CFrame.new(math.cos(angle) * 3, -6, math.sin(angle) * 3)
-                hrp.CFrame = root.CFrame * offset
-            end)
+                    
+                    -- MA GIÁO AN TOÀN: Gom hết thành 1 cục, ném thẳng xuống dưới chân cách 15 studs
+                    -- Ở khoảng cách này, quái phế võ công, không thể chạm vào bạn!
+                    hrp.CFrame = root.CFrame * CFrame.new(0, -15, 0)
+                end)
+            end
         end
     end)
 end)
 
--- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Đã tối ưu nhịp đánh để cứu Menu)
+-- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Cứu Menu mượt)
 task.spawn(function()
-    -- Tăng thời gian chờ lên 0.25s. Đánh vẫn cực nhanh nhưng không làm nghẽn mạng
-    -- Mạng không nghẽn thì Menu mới lướt mượt mà được!
+    -- Nhịp đánh 0.25s để chống nghẽn mạng, Menu lướt vi vu
     while task.wait(0.25) do 
         local char = game.Players.LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -10928,11 +10917,12 @@ task.spawn(function()
         local parts = {}
 
         if root and tool and (tool:GetAttribute("WeaponType") == "Melee" or tool:GetAttribute("WeaponType") == "Sword") then
-            -- Lấy phần thân quái
+            -- Quét phần thân quái đang bị kẹt dưới chân
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local hrp = v:FindFirstChild("HumanoidRootPart")
                 local hum = v:FindFirstChild("Humanoid")
-                if hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
+                -- Phạm vi quét rộng ra 80 để bao trọn cái đống quái dưới chân
+                if hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 80 then
                     for _, _v in ipairs(v:GetChildren()) do
                         if _v:IsA("BasePart") then
                             parts[#parts + 1] = {v, _v}
@@ -10941,7 +10931,7 @@ task.spawn(function()
                 end
             end
 
-            -- Gửi lệnh đánh lên Server
+            -- Gửi lệnh chém xuống Server
             if #parts > 0 then
                 task.spawn(function() 
                     pcall(function()
