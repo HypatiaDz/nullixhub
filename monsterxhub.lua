@@ -10907,7 +10907,7 @@ task.spawn(function()
     end)
 end)
 
--- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Cứu Menu mượt)
+--- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Cứu Menu mượt)
 task.spawn(function()
     -- Nhịp đánh 0.25s để chống nghẽn mạng, Menu lướt vi vu
     while task.wait(0.25) do 
