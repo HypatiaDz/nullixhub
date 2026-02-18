@@ -10867,60 +10867,65 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
---- PHẦN ATTACK TRUYỀN THỐNG: GOM QUÁI DƯỚI CHÂN + CHÉM SIÊU TỐC
-local vim = game:GetService("VirtualInputManager")
-local player = game:GetService("Players").LocalPlayer
-local RunService = game:GetService("RunService")
-
--- LUỒNG 1: GOM QUÁI VÀ KHÓA CHẶT DƯỚI CHÂN (Giống 100% bản cũ)
+-- PHẦN ATTACK FIX LỖI ĐƠ MENU & FIX SÁT THƯƠNG
 task.spawn(function()
-    while task.wait() do 
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    while task.wait(0.1) do -- Chỉnh 0.1 để mượt game, cứu cái menu
+        local char = game.Players.LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        local parts = {}
         
-        if hrp then
-            for _, v in ipairs(workspace.Enemies:GetChildren()) do
-                local root = v:FindFirstChild("HumanoidRootPart")
-                local hum = v:FindFirstChild("Humanoid")
-                
-                -- Hút quái trong phạm vi 150 studs
-                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 150 then
-                    pcall(function()
-                        -- Đưa quái về kích thước thật, không phóng to ảo ma nữa
-                        root.Size = Vector3.new(4, 4, 4)
-                        root.CanCollide = false
+        -- CHỈ QUÉT QUÁI KHI ĐANG CẦM KIẾM/MELEE (Giảm lag máy cực mạnh)
+        if root and tool and (tool:GetAttribute("WeaponType") == "Melee" or tool:GetAttribute("WeaponType") == "Sword") then
+            
+            -- 1. TÌM VÀ GOM QUÁI LẠI 1 CỤC
+            for _, x in ipairs({workspace.Enemies, workspace.Characters}) do
+                for _, v in ipairs(x and x:GetChildren() or {}) do
+                    local hrp = v:FindFirstChild("HumanoidRootPart")
+                    local hum = v:FindFirstChild("Humanoid")
+                    
+                    if v ~= char and hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
+                        -- Kéo quái xuống dưới chân
+                        pcall(function()
+                            hrp.CFrame = root.CFrame * CFrame.new(0, -5, -3)
+                            hrp.Velocity = Vector3.new(0, 0, 0)
+                        end)
                         
-                        -- MA GIÁO GOM QUÁI: Hút tất cả tụi nó vào 1 cục ngay dưới mũi kiếm của bạn
-                        -- (Cách 6 studs bên dưới, 3 studs phía trước -> Đảm bảo chém trúng mà quái không đánh được bạn)
-                        root.CFrame = hrp.CFrame * CFrame.new(0, -6, -3)
-                        
-                        -- Ép quái bất động hoàn toàn, không bay lung tung
-                        root.Velocity = Vector3.new(0, 0, 0)
-                        root.RotVelocity = Vector3.new(0, 0, 0)
-                        hum.WalkSpeed = 0
-                        hum.JumpPower = 0
-                    end)
+                        -- Lấy phần thân quái để đánh
+                        for _, _v in ipairs(v:GetChildren()) do
+                            if _v:IsA("BasePart") then
+                                parts[#parts + 1] = {v, _v}
+                            end
+                        end
+                    end
                 end
             end
+            
+            -- 2. GỬI MÃ HÓA ĐÁNH QUÁI (TÁCH RA LUỒNG RIÊNG ĐỂ KHÔNG LÀM ĐƠ MENU)
+            if #parts > 0 then
+                task.spawn(function() -- << CHÍNH CÁI NÀY SẼ CỨU CÁI MENU CỦA BẠN
+                    pcall(function()
+                        local Net = game.ReplicatedStorage.Modules.Net
+                        require(Net):RemoteEvent("RegisterHit", true)
+                        Net["RE/RegisterAttack"]:FireServer()
+                        
+                        local head = parts[1][1]:FindFirstChild("Head")
+                        if not head then return end
+                        
+                        -- GỬI MÃ HÓA 1 (Của bạn)
+                        Net["RE/RegisterHit"]:FireServer(head, parts, {}, tostring(game.Players.LocalPlayer.UserId):sub(2, 4) .. tostring(coroutine.running()):sub(11, 15))
+                        
+                        -- GỬI MÃ HÓA 2 (Của bạn)
+                        -- Mình thêm kiểm tra biến để không bị lỗi treo script nếu bạn copy thiếu code
+                        if typeof(idremote) ~= "nil" and typeof(remote) ~= "nil" then
+                            cloneref(remote):FireServer(string.gsub("RE/RegisterHit", ".", function(c)
+                                return string.char(bit32.bxor(string.byte(c), math.floor(workspace:GetServerTimeNow() / 10 % 10) + 1))
+                            end), bit32.bxor(idremote + 909090, Net.seed:InvokeServer() * 2), head, parts)
+                        end
+                    end)
+                end)
+            end
+            
         end
     end
-end)
-
--- LUỒNG 2: SPAM CHÉM VẬT LÝ SIÊU TỐC
-task.spawn(function()
-    RunService.RenderStepped:Connect(function()
-        local char = player.Character
-        local tool = char and char:FindFirstChildOfClass("Tool")
-        
-        if tool then
-            pcall(function()
-                -- Ép nhân vật vung vũ khí liên tục
-                tool:Activate()
-                
-                -- Click chuột cực nhanh vào cục quái dưới chân
-                vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-            end)
-        end
-    end)
 end)
