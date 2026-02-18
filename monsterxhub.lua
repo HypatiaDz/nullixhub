@@ -10867,39 +10867,42 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK MỚI: AUTO CHÉM BẰNG COMBAT/VIRTUAL USER (ĐÃ FIX LỖI TREO SCRIPT)
-local VirtualUser = game:GetService("VirtualUser")
+-- PHẦN ATTACK MỚI: AUTO CLICK PHẦN CỨNG (TRỊ MỌI LOẠI COMBAT CONTROLLER)
+local vim = game:GetService("VirtualInputManager")
 local player = game:GetService("Players").LocalPlayer
 
 task.spawn(function()
-    while task.wait(0.1) do -- Tốc độ 0.1 để chém mượt, không bị server kick
+    while task.wait(0.1) do -- Chỉnh 0.1 để chém tốc độ bàn thờ mà không lag
         local char = player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local tool = char and char:FindFirstChildOfClass("Tool")
-        local parts = {} -- Tạo danh sách chứa quái
+        local parts = {} 
         
-        -- 1. Tìm quái ở gần (Gom vào biến parts)
+        -- 1. Tìm quái ở gần
         if hrp and tool then
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local root = v:FindFirstChild("HumanoidRootPart")
                 local hum = v:FindFirstChild("Humanoid")
-                -- Nếu quái còn sống và ở gần (khoảng cách 60)
+                -- Quét quái trong phạm vi 60
                 if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
                     table.insert(parts, v)
                 end
             end
         end
         
-        -- 2. Nếu có vũ khí trên tay và có quái ở gần -> CHÉM!
+        -- 2. Ép chém bằng Click/Touch ảo xuyên Anti-cheat
         if tool and #parts > 0 then
             pcall(function()
-                -- ĐÃ FIX LỖI: Bỏ cái CombatFramework đi vì game bạn chơi không có file này.
-                -- Dùng thẳng lệnh ép vung vũ khí gốc của Roblox (Game nào cũng xài được)
-                tool:Activate()
+                -- Lệnh 1: Gửi tín hiệu nhấp chuột/chạm màn hình trực tiếp từ hệ thống
+                -- Game sẽ tưởng bạn đang lấy tay bấm vào màn hình
+                vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                task.wait(0.02)
+                vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
                 
-                -- Phương án Bất Tử: Giả lập nhấp chuột ảo dồn thêm dame
-                VirtualUser:CaptureController()
-                VirtualUser:Button1Down(Vector2.new(0, 0))
+                -- Lệnh 2 (Dự phòng): Dùng hàm click gốc của trình chạy Script (Executor)
+                if mouse1click then
+                    mouse1click()
+                end
             end)
         end
     end
