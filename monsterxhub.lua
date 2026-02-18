@@ -10867,43 +10867,70 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK FIX LỖI ĐƠ MENU & FIX SÁT THƯƠNG
+local RunService = game:GetService("RunService")
+
+-- PHẦN ATTACK HOÀN HẢO: QUÁI BỊ "LIỆT" NẰM IM + MENU MƯỢT + ĐÁNH MẤT MÁU
+
+-- LUỒNG 1: GOM QUÁI & ÉP BẤT ĐỘNG TẬN GỐC (Chạy theo FPS để đè vật lý game)
 task.spawn(function()
-    while task.wait(0.1) do -- Chỉnh 0.1 để mượt game, cứu cái menu
+    RunService.Heartbeat:Connect(function() 
+        local char = game.Players.LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        for _, v in ipairs(workspace.Enemies:GetChildren()) do
+            local hrp = v:FindFirstChild("HumanoidRootPart")
+            local hum = v:FindFirstChild("Humanoid")
+            
+            if hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
+                pcall(function()
+                    -- 1. LÀM LIỆT QUÁI (Tuyệt chiêu chống nhảy/văng cực mạnh)
+                    hum.PlatformStand = true -- Ép quái ngã ra, mất hoàn toàn khả năng vật lý (nhảy/đi)
+                    hum.WalkSpeed = 0
+                    hum.JumpPower = 0
+                    
+                    -- 2. TẮT VA CHẠM VÀ XÓA LỰC ĐẨY LIÊN TỤC
+                    for _, part in ipairs(v:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                            part.Velocity = Vector3.new(0, 0, 0)
+                            part.RotVelocity = Vector3.new(0, 0, 0)
+                        end
+                    end
+                    
+                    -- 3. KHÓA CHẶT DƯỚI CHÂN (Không cho nhúc nhích dù chỉ 1 milimet)
+                    hrp.CFrame = root.CFrame * CFrame.new(0, -6, 0)
+                end)
+            end
+        end
+    end)
+end)
+
+-- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Giữ nguyên vì đang chạy mượt, không đơ Menu)
+task.spawn(function()
+    while task.wait(0.15) do 
         local char = game.Players.LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local tool = char and char:FindFirstChildOfClass("Tool")
         local parts = {}
-        
-        -- CHỈ QUÉT QUÁI KHI ĐANG CẦM KIẾM/MELEE (Giảm lag máy cực mạnh)
+
         if root and tool and (tool:GetAttribute("WeaponType") == "Melee" or tool:GetAttribute("WeaponType") == "Sword") then
-            
-            -- 1. TÌM VÀ GOM QUÁI LẠI 1 CỤC
-            for _, x in ipairs({workspace.Enemies, workspace.Characters}) do
-                for _, v in ipairs(x and x:GetChildren() or {}) do
-                    local hrp = v:FindFirstChild("HumanoidRootPart")
-                    local hum = v:FindFirstChild("Humanoid")
-                    
-                    if v ~= char and hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
-                        -- Kéo quái xuống dưới chân
-                        pcall(function()
-                            hrp.CFrame = root.CFrame * CFrame.new(0, -5, -3)
-                            hrp.Velocity = Vector3.new(0, 0, 0)
-                        end)
-                        
-                        -- Lấy phần thân quái để đánh
-                        for _, _v in ipairs(v:GetChildren()) do
-                            if _v:IsA("BasePart") then
-                                parts[#parts + 1] = {v, _v}
-                            end
+            -- Lấy phần thân quái
+            for _, v in ipairs(workspace.Enemies:GetChildren()) do
+                local hrp = v:FindFirstChild("HumanoidRootPart")
+                local hum = v:FindFirstChild("Humanoid")
+                if hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
+                    for _, _v in ipairs(v:GetChildren()) do
+                        if _v:IsA("BasePart") then
+                            parts[#parts + 1] = {v, _v}
                         end
                     end
                 end
             end
-            
-            -- 2. GỬI MÃ HÓA ĐÁNH QUÁI (TÁCH RA LUỒNG RIÊNG ĐỂ KHÔNG LÀM ĐƠ MENU)
+
+            -- Gửi lệnh đánh lên Server
             if #parts > 0 then
-                task.spawn(function() -- << CHÍNH CÁI NÀY SẼ CỨU CÁI MENU CỦA BẠN
+                task.spawn(function() 
                     pcall(function()
                         local Net = game.ReplicatedStorage.Modules.Net
                         require(Net):RemoteEvent("RegisterHit", true)
@@ -10912,20 +10939,25 @@ task.spawn(function()
                         local head = parts[1][1]:FindFirstChild("Head")
                         if not head then return end
                         
-                        -- GỬI MÃ HÓA 1 (Của bạn)
+                        -- Mã hóa 1
                         Net["RE/RegisterHit"]:FireServer(head, parts, {}, tostring(game.Players.LocalPlayer.UserId):sub(2, 4) .. tostring(coroutine.running()):sub(11, 15))
                         
-                        -- GỬI MÃ HÓA 2 (Của bạn)
-                        -- Mình thêm kiểm tra biến để không bị lỗi treo script nếu bạn copy thiếu code
+                        -- Mã hóa 2
                         if typeof(idremote) ~= "nil" and typeof(remote) ~= "nil" then
-                            cloneref(remote):FireServer(string.gsub("RE/RegisterHit", ".", function(c)
-                                return string.char(bit32.bxor(string.byte(c), math.floor(workspace:GetServerTimeNow() / 10 % 10) + 1))
-                            end), bit32.bxor(idremote + 909090, Net.seed:InvokeServer() * 2), head, parts)
+                            local currentSeed = Net.seed:InvokeServer() 
+                            cloneref(remote):FireServer(
+                                string.gsub("RE/RegisterHit", ".", function(c)
+                                    return string.char(bit32.bxor(string.byte(c), math.floor(workspace:GetServerTimeNow() / 10 % 10) + 1))
+                                end), 
+                                bit32.bxor(idremote + 909090, currentSeed * 2), 
+                                head, 
+                                parts
+                            )
                         end
                     end)
                 end)
             end
-            
         end
     end
+end)
 end)
