@@ -10884,38 +10884,23 @@ task.spawn(function()
     while task.wait(0.1) do -- Chỉnh tốc độ 0.1 để vung vũ khí mượt, không bị game kick
         local char = player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local tool = char and char:FindFirstChildOfClass("Tool")
+        local tool = char:FindFirstChildOfClass("Tool")
         
-        -- Chỉ đánh khi đang cầm vũ khí trên tay
-        if hrp and tool then
-            local isNearEnemy = false
-            
-            -- Quét quái ở gần (Khoảng cách 55 để đảm bảo chém tới)
-            for _, v in ipairs(workspace.Enemies:GetChildren()) do
-                local root = v:FindFirstChild("HumanoidRootPart")
-                local hum = v:FindFirstChild("Humanoid")
-                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 55 then
-                    isNearEnemy = true
-                    break
-                end
-            end
-
-            -- Nếu có quái, kích hoạt chém tàn bạo
-            if isNearEnemy then
-                pcall(function()
-                    -- CÁCH 1: Giả lập click chuột thực tế (Tuyệt đối không bao giờ lỗi)
+        -- Bỏ check rườm rà, có vũ khí và có quái là quật
+        if tool and #parts > 0 then
+            pcall(function()
+                -- 1. Lấy hệ thống Combat gốc của chính Blox Fruits
+                local player = game:GetService("Players").LocalPlayer
+                local CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
+                
+                -- 2. Ra lệnh nhân vật vung kiếm (Chuẩn 100% như người chơi thật click chuột)
+                if CombatFramework and CombatFramework.activeController then
+                    CombatFramework.activeController:attack()
+                else
+                    -- 3. Phương án Bất Tử: Giả lập nhấp chuột ảo trực tiếp vào game
+                    local VirtualUser = game:GetService("VirtualUser")
                     VirtualUser:CaptureController()
-                    VirtualUser:Button1Down(Vector2.new(800, 600))
-                    
-                    -- CÁCH 2: Kích hoạt thẳng vào Combat của Blox Fruits
-                    if CombatFramework then
-                        local ac = CombatFramework.activeController
-                        if ac and ac.equipped then
-                            ac:attack() -- Ra lệnh nhân vật vung tay chém
-                        end
-                    end
-                end)
-            end
+                    VirtualUser:Button1Down(Vector2.new(0, 0))
+                end
+            end)
         end
-    end
-end)
