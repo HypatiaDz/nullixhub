@@ -2,14 +2,14 @@ if not game:IsLoaded() then
     repeat task.wait() until game:IsLoaded()
 end
 
--- 1. Xóa sạch UI cũ để không bị chồng lệnh
+-- 1. Dọn dẹp sạch sẽ bản cũ
 local CoreGui = game:GetService("CoreGui")
 if CoreGui:FindFirstChild("WindUI") then CoreGui["WindUI"]:Destroy() end
-if CoreGui:FindFirstChild("Nullix Hub") then CoreGui["Nullix Hub"]:Destroy() end
+if CoreGui:FindFirstChild("NullixFixPC") then CoreGui["NullixFixPC"]:Destroy() end
 
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub [FIX PC]",
+    Title = "Nullix Hub [Preemium]
     Icon = "rbxassetid://115375388153325",
     Author = "Owner: Mhuy",
     Folder = "Nullix Hub",
@@ -23,41 +23,46 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 });
 
--- 2. FIX LỖI THU NHỎ TRÊN PC (NÚT BẬT LẠI)
-local function FixPCButton()
-    task.wait(1)
-    local ui = CoreGui:FindFirstChild("WindUI")
-    if ui then
-        -- Tìm cái nút tròn (Open Button)
-        local openButton = ui:FindFirstChild("OpenButton", true) or ui:FindFirstChild("Button", true)
-        if openButton then
-            openButton.Visible = true
-            openButton.Transparency = 0
-            -- Ép nó nằm ở góc trên bên trái cho dễ thấy trên PC
-            openButton.Position = UDim2.new(0, 10, 0, 10) 
-        end
-    end
-end
-task.spawn(FixPCButton)
+-- 2. TỰ TẠO NÚT BẬT MENU RIÊNG (Không dùng nút của WindUI vì nó bị lỗi trên PC)
+local ScreenGui = Instance.new("ScreenGui")
+local OpenButton = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
 
--- 3. PHÍM TẮT DỰ PHÒNG (QUAN TRỌNG NHẤT)
+ScreenGui.Name = "NullixFixPC"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+OpenButton.Name = "OpenButton"
+OpenButton.Parent = ScreenGui
+OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+OpenButton.Position = UDim2.new(0, 10, 0.5, 0) -- Nằm ở giữa mép trái màn hình
+OpenButton.Size = UDim2.new(0, 80, 0, 30)
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.Text = "OPEN"
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.TextSize = 14.000
+OpenButton.Draggable = true -- Bạn có thể kéo nút này đi chỗ khác nếu vướng
+
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = OpenButton
+
+-- Lệnh khi nhấn nút "OPEN" tự tạo
+OpenButton.MouseButton1Click:Connect(function()
+    Window:Toggle()
+end)
+
+-- 3. PHÍM TẮT DỰ PHÒNG (Bấm L-CTRL là hiện)
 local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
-    -- Trên PC: Nhấn phím L-CTRL hoặc nút INSERT để hiện lại menu nếu lỡ tay thu nhỏ
-    if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.Insert then
+    if input.KeyCode == Enum.KeyCode.LeftControl then
         Window:Toggle()
-        -- Nếu nhấn Toggle vẫn không lên thì dùng lệnh ép hiện
-        local ui = CoreGui:FindFirstChild("WindUI")
-        if ui then ui.Enabled = true end
     end
 end)
 
-Window:EditOpenButton({
-    Title = "OPEN MENU",
-    Icon = "rbxassetid://115375388153325",
-    Enabled = true, -- Luôn để true
-})
+-- Tắt nút mặc định của WindUI đi cho đỡ lỗi
+Window:EditOpenButton({ Enabled = false })
+
 local Tabs = {
     InfoTab = Window:Tab({
         Title = "Discord",
