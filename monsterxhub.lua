@@ -10867,7 +10867,7 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN FIX LỖI ĐÁNH QUÁI (Dán vào cuối file)
+-- PHẦN FIX LỖI ĐÁNH QUÁI (Thay thế đoạn cuối file của bạn)
 task.spawn(function()
     while task.wait() do
         local char = game.Players.LocalPlayer.Character
@@ -10875,35 +10875,35 @@ task.spawn(function()
         local tool = char and char:FindFirstChildOfClass("Tool")
         local parts = {}
 
-        -- Gom quái xung quanh (Khoảng cách 100 để đánh lan tốt hơn)
-        if hrp then
+        -- 1. Tìm quái và gom bộ phận để đánh lan
+        if hrp and tool then
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local vRoot = v:FindFirstChild("HumanoidRootPart")
                 if vRoot and (hrp.Position - vRoot.Position).Magnitude <= 100 then
-                    for _, _v in ipairs(v:GetChildren()) do
-                        if _v:IsA("BasePart") then
-                            parts[#parts + 1] = {v, _v}
+                    for _, child in ipairs(v:GetChildren()) do
+                        if child:IsA("BasePart") then
+                            table.insert(parts, {v, child})
                         end
                     end
                 end
             end
         end
 
-        -- Lệnh đánh quái chuẩn (Bỏ bit32 cũ gây lỗi)
+        -- 2. Gửi lệnh sát thương (Đã lược bỏ bit32 gây lỗi)
         if #parts > 0 and tool then
             pcall(function()
-                -- Tự động cầm vũ khí nếu đang cất
+                -- Tự động cầm vũ khí
                 if tool.Parent ~= char then tool.Parent = char end
                 
-                -- Gửi lệnh đánh vung tay
                 local net = game:GetService("ReplicatedStorage").Modules.Net
+                
+                -- Lệnh vung tay
                 net["RE/RegisterAttack"]:FireServer()
                 
-                -- Tìm Head để làm mục tiêu chính
-                local head = parts[1][1]:FindFirstChild("Head")
-                if head then
-                    -- Gửi sát thương (Sửa tham số cuối thành Attack để Server dễ nhận)
-                    net["RE/RegisterHit"]:FireServer(head, parts, {}, "Attack")
+                -- Lệnh gây sát thương (Dùng string đơn giản cho server dễ nhận)
+                local targetHead = parts[1][1]:FindFirstChild("Head")
+                if targetHead then
+                    net["RE/RegisterHit"]:FireServer(targetHead, parts, {}, "Attack")
                 end
             end)
         end
