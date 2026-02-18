@@ -10867,42 +10867,53 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK MỚI: AUTO CLICK PHẦN CỨNG (TRỊ MỌI LOẠI COMBAT CONTROLLER)
+-- PHẦN ATTACK MỚI: HÚT QUÁI + PHÓNG TO HITBOX + AUTO CHÉM
 local vim = game:GetService("VirtualInputManager")
 local player = game:GetService("Players").LocalPlayer
 
 task.spawn(function()
-    while task.wait(0.1) do -- Chỉnh 0.1 để chém tốc độ bàn thờ mà không lag
+    while task.wait(0.1) do 
         local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local tool = char and char:FindFirstChildOfClass("Tool")
-        local parts = {} 
+        if not char then continue end 
         
-        -- 1. Tìm quái ở gần
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local tool = char:FindFirstChildOfClass("Tool")
+        local hasTarget = false 
+        
+        -- 1. TÌM VÀ HÚT QUÁI LÊN TRỜI CHỖ BẠN ĐỨNG
         if hrp and tool then
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local root = v:FindFirstChild("HumanoidRootPart")
                 local hum = v:FindFirstChild("Humanoid")
-                -- Quét quái trong phạm vi 60
-                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
-                    table.insert(parts, v)
+                
+                -- Quét rộng ra xíu (80 studs) vì bạn đang bay ở trên cao
+                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 80 then
+                    hasTarget = true
+                    
+                    pcall(function()
+                        -- MA GIÁO 1: Hút quái lên ngay trước mặt bạn 4 mét
+                        root.CFrame = hrp.CFrame * CFrame.new(0, 0, -4)
+                        root.Velocity = Vector3.new(0, 0, 0) -- Ép quái đứng im không rớt xuống
+                        
+                        -- MA GIÁO 2: Phóng to cục Hitbox của quái to bằng cái đình
+                        root.Size = Vector3.new(20, 20, 20)
+                        root.CanCollide = false
+                        root.Transparency = 0.8 -- Làm mờ bớt cho đỡ vướng màn hình
+                    end)
                 end
             end
         end
         
-        -- 2. Ép chém bằng Click/Touch ảo xuyên Anti-cheat
-        if tool and #parts > 0 then
+        -- 2. QUÁI ĐÃ Ở TRƯỚC MẶT -> BỔ KIẾM XUỐNG
+        if tool and hasTarget then
             pcall(function()
-                -- Lệnh 1: Gửi tín hiệu nhấp chuột/chạm màn hình trực tiếp từ hệ thống
-                -- Game sẽ tưởng bạn đang lấy tay bấm vào màn hình
+                -- Kích hoạt vung vũ khí
+                tool:Activate()
+                
+                -- Click chuột ảo nhồi thêm dame
                 vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
                 task.wait(0.02)
                 vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                
-                -- Lệnh 2 (Dự phòng): Dùng hàm click gốc của trình chạy Script (Executor)
-                if mouse1click then
-                    mouse1click()
-                end
             end)
         end
     end
