@@ -17,7 +17,7 @@ CleanUI("FixMenuMobilePC")
 -- 3. KHỞI TẠO MENU (WindUI)
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub [All Device]",
+    Title = "Nullix Hub [1]",
     Icon = "rbxassetid://115375388153325",
     Author = "Owner: Mhuy",
     Folder = "Nullix Hub",
