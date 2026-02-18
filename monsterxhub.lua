@@ -10867,52 +10867,60 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK HOÀN THIỆN: TREO TRÊN CAO CHÉM - QUÁI KHÔNG BỊ VĂNG
+--- PHẦN ATTACK TRUYỀN THỐNG: GOM QUÁI DƯỚI CHÂN + CHÉM SIÊU TỐC
 local vim = game:GetService("VirtualInputManager")
 local player = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
 
+-- LUỒNG 1: GOM QUÁI VÀ KHÓA CHẶT DƯỚI CHÂN (Giống 100% bản cũ)
 task.spawn(function()
-    while task.wait(0.1) do 
+    while task.wait() do 
         local char = player.Character
-        if not char then continue end 
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
         
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        local tool = char:FindFirstChildOfClass("Tool")
-        local hasTarget = false 
-        
-        if hrp and tool then
+        if hrp then
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local root = v:FindFirstChild("HumanoidRootPart")
                 local hum = v:FindFirstChild("Humanoid")
                 
-                -- Quét rộng (80 studs) để bao trọn khoảng cách từ trên không xuống đất
-                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 80 then
-                    hasTarget = true
-                    
+                -- Hút quái trong phạm vi 150 studs
+                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 150 then
                     pcall(function()
-                        -- MA GIÁO MỚI: Chỉ phóng to Hitbox chạm tới kiếm, KHÔNG kéo quái lên
-                        root.Size = Vector3.new(60, 60, 60)
+                        -- Đưa quái về kích thước thật, không phóng to ảo ma nữa
+                        root.Size = Vector3.new(4, 4, 4)
+                        root.CanCollide = false
                         
-                        -- Tắt va chạm để tụi nó không húc nhau bay lung tung
-                        root.CanCollide = false 
-                        root.Transparency = 1 -- Ẩn đi cho bạn dễ nhìn màn hình
+                        -- MA GIÁO GOM QUÁI: Hút tất cả tụi nó vào 1 cục ngay dưới mũi kiếm của bạn
+                        -- (Cách 6 studs bên dưới, 3 studs phía trước -> Đảm bảo chém trúng mà quái không đánh được bạn)
+                        root.CFrame = hrp.CFrame * CFrame.new(0, -6, -3)
                         
-                        -- Khóa chặt vận tốc, ép tụi nó nằm im dưới đất
+                        -- Ép quái bất động hoàn toàn, không bay lung tung
                         root.Velocity = Vector3.new(0, 0, 0)
                         root.RotVelocity = Vector3.new(0, 0, 0)
+                        hum.WalkSpeed = 0
+                        hum.JumpPower = 0
                     end)
                 end
             end
         end
+    end
+end)
+
+-- LUỒNG 2: SPAM CHÉM VẬT LÝ SIÊU TỐC
+task.spawn(function()
+    RunService.RenderStepped:Connect(function()
+        local char = player.Character
+        local tool = char and char:FindFirstChildOfClass("Tool")
         
-        -- Tiến hành chém khi quái đã lọt vào tầm của Hitbox khổng lồ
-        if tool and hasTarget then
+        if tool then
             pcall(function()
+                -- Ép nhân vật vung vũ khí liên tục
                 tool:Activate()
+                
+                -- Click chuột cực nhanh vào cục quái dưới chân
                 vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                task.wait(0.02)
                 vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
             end)
         end
-    end
+    end)
 end)
