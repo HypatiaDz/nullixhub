@@ -10870,42 +10870,49 @@ end
 -- PHẦN ATTACK MỚI: SIÊU NHẸ - KHÔNG LỖI - DÙNG CHO CẢ PC/MOBI
 task.spawn(function()
     while task.wait() do
-        local char = game.Players.LocalPlayer.Character
+        -- PHẦN ĐÁNH QUÁI: BAO ĐÁNH TRÚNG - KHÔNG LỖI - BẤT TỬ
+local VirtualUser = game:GetService("VirtualUser")
+local player = game.Players.LocalPlayer
+local CombatFramework
+
+-- Lấy hệ thống Combat gốc của game để đánh
+pcall(function()
+    CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do -- Chỉnh tốc độ 0.1 để vung vũ khí mượt, không bị game kick
+        local char = player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local tool = char and char:FindFirstChildOfClass("Tool")
         
-        -- Chỉ đánh khi nhân vật còn sống và đang cầm vũ khí
+        -- Chỉ đánh khi đang cầm vũ khí trên tay
         if hrp and tool then
-            local parts = {}
-            -- Quét quái xung quanh trong phạm vi 100 (để đánh lan cực mạnh)
+            local isNearEnemy = false
+            
+            -- Quét quái ở gần (Khoảng cách 55 để đảm bảo chém tới)
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
-                local vRoot = v:FindFirstChild("HumanoidRootPart")
-                if vRoot and (hrp.Position - vRoot.Position).Magnitude <= 100 then
-                    -- Gom tất cả bộ phận của quái để dồn dame
-                    for _, child in ipairs(v:GetChildren()) do
-                        if child:IsA("BasePart") then
-                            table.insert(parts, {v, child})
-                        end
-                    end
+                local root = v:FindFirstChild("HumanoidRootPart")
+                local hum = v:FindFirstChild("Humanoid")
+                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 55 then
+                    isNearEnemy = true
+                    break
                 end
             end
 
-            -- Nếu thấy quái thì bắt đầu đấm
-            if #parts > 0 then
+            -- Nếu có quái, kích hoạt chém tàn bạo
+            if isNearEnemy then
                 pcall(function()
-                    -- Gửi lệnh vung tay (Animation)
-                    game:GetService("ReplicatedStorage").Modules.Net["RE/RegisterAttack"]:FireServer()
+                    -- CÁCH 1: Giả lập click chuột thực tế (Tuyệt đối không bao giờ lỗi)
+                    VirtualUser:CaptureController()
+                    VirtualUser:Button1Down(Vector2.new(800, 600))
                     
-                    -- Gửi lệnh gây sát thương (Mã sạch hoàn toàn)
-                    local targetHead = parts[1][1]:FindFirstChild("Head")
-                    if targetHead then
-                        -- Gửi trực tiếp, không cần mã hóa UserId hay bit32 gì cả
-                        game:GetService("ReplicatedStorage").Modules.Net["RE/RegisterHit"]:FireServer(
-                            targetHead, 
-                            parts, 
-                            {}, 
-                            "Attack"
-                        )
+                    -- CÁCH 2: Kích hoạt thẳng vào Combat của Blox Fruits
+                    if CombatFramework then
+                        local ac = CombatFramework.activeController
+                        if ac and ac.equipped then
+                            ac:attack() -- Ra lệnh nhân vật vung tay chém
+                        end
                     end
                 end)
             end
