@@ -10867,40 +10867,44 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK MỚI: SIÊU NHẸ - KHÔNG LỖI - DÙNG CHO CẢ PC/MOBI
-task.spawn(function()
-    while task.wait() do
-        -- PHẦN ĐÁNH QUÁI: BAO ĐÁNH TRÚNG - KHÔNG LỖI - BẤT TỬ
+-- PHẦN ATTACK MỚI: AUTO CHÉM BẰNG COMBAT/VIRTUAL USER (SIÊU MƯỢT)
 local VirtualUser = game:GetService("VirtualUser")
-local player = game.Players.LocalPlayer
-local CombatFramework
-
--- Lấy hệ thống Combat gốc của game để đánh
-pcall(function()
-    CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
-end)
+local player = game:GetService("Players").LocalPlayer
 
 task.spawn(function()
-    while task.wait(0.1) do -- Chỉnh tốc độ 0.1 để vung vũ khí mượt, không bị game kick
+    while task.wait(0.1) do -- Tốc độ 0.1 để chém mượt, không bị server kick
         local char = player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local tool = char:FindFirstChildOfClass("Tool")
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        local parts = {} -- Tạo danh sách chứa quái
         
-        -- Bỏ check rườm rà, có vũ khí và có quái là quật
+        -- 1. Tìm quái ở gần (Gom vào biến parts)
+        if hrp and tool then
+            for _, v in ipairs(workspace.Enemies:GetChildren()) do
+                local root = v:FindFirstChild("HumanoidRootPart")
+                local hum = v:FindFirstChild("Humanoid")
+                -- Nếu quái còn sống và ở gần (khoảng cách 60)
+                if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
+                    table.insert(parts, v)
+                end
+            end
+        end
+        
+        -- 2. Nếu có vũ khí trên tay và có quái ở gần -> CHÉM!
         if tool and #parts > 0 then
             pcall(function()
-                -- 1. Lấy hệ thống Combat gốc của chính Blox Fruits
-                local player = game:GetService("Players").LocalPlayer
+                -- Lấy hệ thống Combat gốc của chính game
                 local CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
                 
-                -- 2. Ra lệnh nhân vật vung kiếm (Chuẩn 100% như người chơi thật click chuột)
+                -- Ra lệnh vung kiếm (Chuẩn như người chơi thật)
                 if CombatFramework and CombatFramework.activeController then
                     CombatFramework.activeController:attack()
                 else
-                    -- 3. Phương án Bất Tử: Giả lập nhấp chuột ảo trực tiếp vào game
-                    local VirtualUser = game:GetService("VirtualUser")
+                    -- Phương án Bất Tử: Giả lập nhấp chuột ảo nếu game khóa Combat
                     VirtualUser:CaptureController()
                     VirtualUser:Button1Down(Vector2.new(0, 0))
                 end
             end)
         end
+    end
+end)
