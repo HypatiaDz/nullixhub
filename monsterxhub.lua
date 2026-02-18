@@ -10867,7 +10867,7 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK MỚI: HÚT QUÁI + PHÓNG TO HITBOX + AUTO CHÉM
+-- PHẦN ATTACK HOÀN THIỆN: TREO TRÊN CAO CHÉM - QUÁI KHÔNG BỊ VĂNG
 local vim = game:GetService("VirtualInputManager")
 local player = game:GetService("Players").LocalPlayer
 
@@ -10880,37 +10880,35 @@ task.spawn(function()
         local tool = char:FindFirstChildOfClass("Tool")
         local hasTarget = false 
         
-        -- 1. TÌM VÀ HÚT QUÁI LÊN TRỜI CHỖ BẠN ĐỨNG
         if hrp and tool then
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local root = v:FindFirstChild("HumanoidRootPart")
                 local hum = v:FindFirstChild("Humanoid")
                 
-                -- Quét rộng ra xíu (80 studs) vì bạn đang bay ở trên cao
+                -- Quét rộng (80 studs) để bao trọn khoảng cách từ trên không xuống đất
                 if root and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 80 then
                     hasTarget = true
                     
                     pcall(function()
-                        -- MA GIÁO 1: Hút quái lên ngay trước mặt bạn 4 mét
-                        root.CFrame = hrp.CFrame * CFrame.new(0, 0, -4)
-                        root.Velocity = Vector3.new(0, 0, 0) -- Ép quái đứng im không rớt xuống
+                        -- MA GIÁO MỚI: Chỉ phóng to Hitbox chạm tới kiếm, KHÔNG kéo quái lên
+                        root.Size = Vector3.new(60, 60, 60)
                         
-                        -- MA GIÁO 2: Phóng to cục Hitbox của quái to bằng cái đình
-                        root.Size = Vector3.new(20, 20, 20)
-                        root.CanCollide = false
-                        root.Transparency = 0.8 -- Làm mờ bớt cho đỡ vướng màn hình
+                        -- Tắt va chạm để tụi nó không húc nhau bay lung tung
+                        root.CanCollide = false 
+                        root.Transparency = 1 -- Ẩn đi cho bạn dễ nhìn màn hình
+                        
+                        -- Khóa chặt vận tốc, ép tụi nó nằm im dưới đất
+                        root.Velocity = Vector3.new(0, 0, 0)
+                        root.RotVelocity = Vector3.new(0, 0, 0)
                     end)
                 end
             end
         end
         
-        -- 2. QUÁI ĐÃ Ở TRƯỚC MẶT -> BỔ KIẾM XUỐNG
+        -- Tiến hành chém khi quái đã lọt vào tầm của Hitbox khổng lồ
         if tool and hasTarget then
             pcall(function()
-                -- Kích hoạt vung vũ khí
                 tool:Activate()
-                
-                -- Click chuột ảo nhồi thêm dame
                 vim:SendMouseButtonEvent(0, 0, 0, true, game, 1)
                 task.wait(0.02)
                 vim:SendMouseButtonEvent(0, 0, 0, false, game, 1)
