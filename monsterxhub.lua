@@ -10867,19 +10867,21 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN FIX LỖI ĐÁNH QUÁI (Thay thế đoạn cuối file của bạn)
+-- PHẦN ATTACK MỚI: SIÊU NHẸ - KHÔNG LỖI - DÙNG CHO CẢ PC/MOBI
 task.spawn(function()
     while task.wait() do
         local char = game.Players.LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local tool = char and char:FindFirstChildOfClass("Tool")
-        local parts = {}
-
-        -- 1. Tìm quái và gom bộ phận để đánh lan
+        
+        -- Chỉ đánh khi nhân vật còn sống và đang cầm vũ khí
         if hrp and tool then
+            local parts = {}
+            -- Quét quái xung quanh trong phạm vi 100 (để đánh lan cực mạnh)
             for _, v in ipairs(workspace.Enemies:GetChildren()) do
                 local vRoot = v:FindFirstChild("HumanoidRootPart")
                 if vRoot and (hrp.Position - vRoot.Position).Magnitude <= 100 then
+                    -- Gom tất cả bộ phận của quái để dồn dame
                     for _, child in ipairs(v:GetChildren()) do
                         if child:IsA("BasePart") then
                             table.insert(parts, {v, child})
@@ -10887,25 +10889,26 @@ task.spawn(function()
                     end
                 end
             end
-        end
 
-        -- 2. Gửi lệnh sát thương (Đã lược bỏ bit32 gây lỗi)
-        if #parts > 0 and tool then
-            pcall(function()
-                -- Tự động cầm vũ khí
-                if tool.Parent ~= char then tool.Parent = char end
-                
-                local net = game:GetService("ReplicatedStorage").Modules.Net
-                
-                -- Lệnh vung tay
-                net["RE/RegisterAttack"]:FireServer()
-                
-                -- Lệnh gây sát thương (Dùng string đơn giản cho server dễ nhận)
-                local targetHead = parts[1][1]:FindFirstChild("Head")
-                if targetHead then
-                    net["RE/RegisterHit"]:FireServer(targetHead, parts, {}, "Attack")
-                end
-            end)
+            -- Nếu thấy quái thì bắt đầu đấm
+            if #parts > 0 then
+                pcall(function()
+                    -- Gửi lệnh vung tay (Animation)
+                    game:GetService("ReplicatedStorage").Modules.Net["RE/RegisterAttack"]:FireServer()
+                    
+                    -- Gửi lệnh gây sát thương (Mã sạch hoàn toàn)
+                    local targetHead = parts[1][1]:FindFirstChild("Head")
+                    if targetHead then
+                        -- Gửi trực tiếp, không cần mã hóa UserId hay bit32 gì cả
+                        game:GetService("ReplicatedStorage").Modules.Net["RE/RegisterHit"]:FireServer(
+                            targetHead, 
+                            parts, 
+                            {}, 
+                            "Attack"
+                        )
+                    end
+                end)
+            end
         end
     end
 end)
