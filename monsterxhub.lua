@@ -10867,41 +10867,44 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
+-- PHẦN FIX LỖI ĐÁNH QUÁI (Dán vào cuối file)
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait() do
         local char = game.Players.LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local tool = char and char:FindFirstChildOfClass("Tool")
         local parts = {}
-        for _, x in ipairs({workspace.Enemies, workspace.Characters}) do
-            for _, v in ipairs(x and x:GetChildren() or {}) do
-                local hrp = v:FindFirstChild("HumanoidRootPart")
-                local hum = v:FindFirstChild("Humanoid")
-                if v ~= char and hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
+
+        -- Gom quái xung quanh (Khoảng cách 100 để đánh lan tốt hơn)
+        if hrp then
+            for _, v in ipairs(workspace.Enemies:GetChildren()) do
+                local vRoot = v:FindFirstChild("HumanoidRootPart")
+                if vRoot and (hrp.Position - vRoot.Position).Magnitude <= 100 then
                     for _, _v in ipairs(v:GetChildren()) do
-                        if _v:IsA("BasePart") and (hrp.Position - root.Position).Magnitude <= 60 then
+                        if _v:IsA("BasePart") then
                             parts[#parts + 1] = {v, _v}
                         end
                     end
                 end
             end
         end
-        local tool = char:FindFirstChildOfClass("Tool")
-        if #parts > 0 and tool and
-            (tool:GetAttribute("WeaponType") == "Melee" or tool:GetAttribute("WeaponType") == "Sword") then
+
+        -- Lệnh đánh quái chuẩn (Bỏ bit32 cũ gây lỗi)
+        if #parts > 0 and tool then
             pcall(function()
-                require(game.ReplicatedStorage.Modules.Net):RemoteEvent("RegisterHit", true)
-                game.ReplicatedStorage.Modules.Net["RE/RegisterAttack"]:FireServer()
+                -- Tự động cầm vũ khí nếu đang cất
+                if tool.Parent ~= char then tool.Parent = char end
+                
+                -- Gửi lệnh đánh vung tay
+                local net = game:GetService("ReplicatedStorage").Modules.Net
+                net["RE/RegisterAttack"]:FireServer()
+                
+                -- Tìm Head để làm mục tiêu chính
                 local head = parts[1][1]:FindFirstChild("Head")
-                if not head then
-                    return
+                if head then
+                    -- Gửi sát thương (Sửa tham số cuối thành Attack để Server dễ nhận)
+                    net["RE/RegisterHit"]:FireServer(head, parts, {}, "Attack")
                 end
-                game.ReplicatedStorage.Modules.Net["RE/RegisterHit"]:FireServer(head, parts, {}, tostring(
-                    game.Players.LocalPlayer.UserId):sub(2, 4) .. tostring(coroutine.running()):sub(11, 15))
-                cloneref(remote):FireServer(string.gsub("RE/RegisterHit", ".", function(c)
-                    return string.char(
-                        bit32.bxor(string.byte(c), math.floor(workspace:GetServerTimeNow() / 10 % 10) + 1))
-                end), bit32.bxor(idremote + 909090, game.ReplicatedStorage.Modules.Net.seed:InvokeServer() * 2), head,
-                    parts)
             end)
         end
     end
