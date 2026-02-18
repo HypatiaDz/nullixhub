@@ -2,18 +2,22 @@ if not game:IsLoaded() then
     repeat task.wait() until game:IsLoaded()
 end
 
--- 1. FIX CRASH (PC rất hay văng vì dòng 1tr FPS, mình chỉnh về 144)
-if setfpscap then setfpscap(144) end
+-- 1. CHỐNG CRASH CHO PC & ĐIỆN THOẠI
+if setfpscap then setfpscap(60) end 
 
--- 2. DỌN DẸP UI CŨ
+-- 2. DỌN DẸP UI CŨ (Để không bị chồng nhiều menu)
 local CoreGui = game:GetService("CoreGui")
-if CoreGui:FindFirstChild("WindUI") then CoreGui["WindUI"]:Destroy() end
-if CoreGui:FindFirstChild("FixMenuPC") then CoreGui["FixMenuPC"]:Destroy() end
+local function CleanUI(name)
+    local ui = CoreGui:FindFirstChild(name) or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild(name)
+    if ui then ui:Destroy() end
+end
+CleanUI("WindUI")
+CleanUI("FixMenuMobilePC")
 
--- 3. LOAD THƯ VIỆN WINDUI
+-- 3. KHỞI TẠO MENU (WindUI)
 local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub [PC FIXED]",
+    Title = "Nullix Hub [All Device]",
     Icon = "rbxassetid://115375388153325",
     Author = "Owner: Mhuy",
     Folder = "Nullix Hub",
@@ -27,46 +31,43 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 });
 
--- 4. TỰ TẠO NÚT BẬT/TẮT RIÊNG (NÚT NÀY KHÔNG BAO GIỜ MẤT)
+-- 4. TẠO NÚT BẬT/TẮT "BẤT TỬ" (Dùng cho cả Mobi và PC)
 local ScreenGui = Instance.new("ScreenGui")
 local OpenButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
-ScreenGui.Name = "FixMenuPC"
+ScreenGui.Name = "FixMenuMobilePC"
 ScreenGui.Parent = CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 OpenButton.Name = "OpenButton"
 OpenButton.Parent = ScreenGui
-OpenButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-OpenButton.BackgroundTransparency = 0.2
-OpenButton.Position = UDim2.new(0, 10, 0.4, 0) -- Nằm mép trái màn hình
-OpenButton.Size = UDim2.new(0, 80, 0, 35)
+OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+OpenButton.BackgroundTransparency = 0.4
+OpenButton.Position = UDim2.new(0, 5, 0.4, 0) -- Nằm sát mép trái màn hình
+OpenButton.Size = UDim2.new(0, 50, 0, 50) -- Nút tròn vừa phải
 OpenButton.Font = Enum.Font.GothamBold
-OpenButton.Text = "OPEN HUB"
+OpenButton.Text = "MENU"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.TextSize = 13
-OpenButton.Draggable = true -- Có thể dùng chuột kéo đi nếu vướng
+OpenButton.TextSize = 10
+OpenButton.Draggable = true -- Mobi hay PC đều kéo đi được nếu vướng
 
-UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.CornerRadius = UDim.new(1, 0)
 UICorner.Parent = OpenButton
 
--- Khi bấm nút này thì Menu hiện/ẩn
+-- Click nút này là hiện/ẩn Menu
 OpenButton.MouseButton1Click:Connect(function()
     Window:Toggle()
 end)
 
--- 5. PHÍM TẮT CTRL TRÁI ĐỂ BẬT/TẮT
-local UserInputService = game:GetService("UserInputService")
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == Enum.KeyCode.LeftControl then
+-- 5. PHÍM TẮT RIÊNG CHO PC (Ctrl trái)
+game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
         Window:Toggle()
     end
 end)
 
--- Tắt cái nút Open mặc định bị lỗi của WindUI
-Window:EditOpenButton({ Enabled = false })
+-- Tắt cái nút mặc định hay bị lỗi của thư
 
 local Tabs = {
     InfoTab = Window:Tab({
