@@ -10869,46 +10869,59 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
 end
 local RunService = game:GetService("RunService")
 
--- PHẦN ATTACK HOÀN HẢO: QUÁI BỊ "LIỆT" NẰM IM + MENU MƯỢT + ĐÁNH MẤT MÁU
+-- PHẦN ATTACK HOÀN HẢO: QUÁI XẾP VÒNG TRÒN + MENU SIÊU MƯỢT + ĐÁNH MẤT MÁU
+local RunService = game:GetService("RunService")
 
--- LUỒNG 1: GOM QUÁI & ÉP BẤT ĐỘNG TẬN GỐC (Chạy theo FPS để đè vật lý game)
+-- LUỒNG 1: GOM QUÁI XẾP THÀNH VÒNG TRÒN (Trị dứt điểm vụ quái văng tá lả)
 task.spawn(function()
     RunService.Heartbeat:Connect(function() 
         local char = game.Players.LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
+        -- Lấy danh sách quái ở gần
+        local enemies = {}
         for _, v in ipairs(workspace.Enemies:GetChildren()) do
             local hrp = v:FindFirstChild("HumanoidRootPart")
             local hum = v:FindFirstChild("Humanoid")
-            
             if hrp and hum and hum.Health > 0 and (hrp.Position - root.Position).Magnitude <= 60 then
-                pcall(function()
-                    -- 1. LÀM LIỆT QUÁI (Tuyệt chiêu chống nhảy/văng cực mạnh)
-                    hum.PlatformStand = true -- Ép quái ngã ra, mất hoàn toàn khả năng vật lý (nhảy/đi)
-                    hum.WalkSpeed = 0
-                    hum.JumpPower = 0
-                    
-                    -- 2. TẮT VA CHẠM VÀ XÓA LỰC ĐẨY LIÊN TỤC
-                    for _, part in ipairs(v:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                            part.Velocity = Vector3.new(0, 0, 0)
-                            part.RotVelocity = Vector3.new(0, 0, 0)
-                        end
-                    end
-                    
-                    -- 3. KHÓA CHẶT DƯỚI CHÂN (Không cho nhúc nhích dù chỉ 1 milimet)
-                    hrp.CFrame = root.CFrame * CFrame.new(0, -6, 0)
-                end)
+                table.insert(enemies, v)
             end
+        end
+
+        -- Gom và xếp quái
+        for i, v in ipairs(enemies) do
+            pcall(function()
+                local hrp = v:FindFirstChild("HumanoidRootPart")
+                local hum = v:FindFirstChild("Humanoid")
+                
+                hum.PlatformStand = true 
+                hum.WalkSpeed = 0
+                hum.JumpPower = 0
+                
+                for _, part in ipairs(v:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                        part.Velocity = Vector3.new(0, 0, 0)
+                        part.RotVelocity = Vector3.new(0, 0, 0)
+                    end
+                end
+                
+                -- MA GIÁO MỚI: Xếp quái thành một vòng tròn quanh chân bạn (Bán kính 3 mét)
+                -- Tụi nó sẽ không đè lên nhau nữa -> Tuyệt đối không bao giờ nảy hay văng!
+                local angle = (i / #enemies) * math.pi * 2
+                local offset = CFrame.new(math.cos(angle) * 3, -6, math.sin(angle) * 3)
+                hrp.CFrame = root.CFrame * offset
+            end)
         end
     end)
 end)
 
--- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Giữ nguyên vì đang chạy mượt, không đơ Menu)
+-- LUỒNG 2: GỬI MÃ HÓA SÁT THƯƠNG (Đã tối ưu nhịp đánh để cứu Menu)
 task.spawn(function()
-    while task.wait(0.15) do 
+    -- Tăng thời gian chờ lên 0.25s. Đánh vẫn cực nhanh nhưng không làm nghẽn mạng
+    -- Mạng không nghẽn thì Menu mới lướt mượt mà được!
+    while task.wait(0.25) do 
         local char = game.Players.LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local tool = char and char:FindFirstChildOfClass("Tool")
