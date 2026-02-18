@@ -10867,7 +10867,7 @@ for _, v in next, ({game.ReplicatedStorage.Util, game.ReplicatedStorage.Common, 
         end
     end)
 end
--- PHẦN ATTACK MỚI: AUTO CHÉM BẰNG COMBAT/VIRTUAL USER (SIÊU MƯỢT)
+-- PHẦN ATTACK MỚI: AUTO CHÉM BẰNG COMBAT/VIRTUAL USER (ĐÃ FIX LỖI TREO SCRIPT)
 local VirtualUser = game:GetService("VirtualUser")
 local player = game:GetService("Players").LocalPlayer
 
@@ -10893,17 +10893,13 @@ task.spawn(function()
         -- 2. Nếu có vũ khí trên tay và có quái ở gần -> CHÉM!
         if tool and #parts > 0 then
             pcall(function()
-                -- Lấy hệ thống Combat gốc của chính game
-                local CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
+                -- ĐÃ FIX LỖI: Bỏ cái CombatFramework đi vì game bạn chơi không có file này.
+                -- Dùng thẳng lệnh ép vung vũ khí gốc của Roblox (Game nào cũng xài được)
+                tool:Activate()
                 
-                -- Ra lệnh vung kiếm (Chuẩn như người chơi thật)
-                if CombatFramework and CombatFramework.activeController then
-                    CombatFramework.activeController:attack()
-                else
-                    -- Phương án Bất Tử: Giả lập nhấp chuột ảo nếu game khóa Combat
-                    VirtualUser:CaptureController()
-                    VirtualUser:Button1Down(Vector2.new(0, 0))
-                end
+                -- Phương án Bất Tử: Giả lập nhấp chuột ảo dồn thêm dame
+                VirtualUser:CaptureController()
+                VirtualUser:Button1Down(Vector2.new(0, 0))
             end)
         end
     end
