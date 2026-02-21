@@ -1,1 +1,1 @@
-loadstring(game:HttpGet("https://luacrack.site/index.php/Nullix/raw/monsterxhub.lua"))()
+loadstring(game:HttpGet("https://luacrack.site/index.php/Nullix/raw/nullixhub.lua"))()
