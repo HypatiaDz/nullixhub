@@ -1,107 +1,80 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
-
 local LP = Players.LocalPlayer
--- Đợi Player và PlayerGui sẵn sàng một cách an toàn
-local PlayerGui = LP:FindFirstChildOfClass("PlayerGui") or LP:WaitForChild("PlayerGui", 10)
+local PlayerGui = LP:WaitForChild("PlayerGui")
 
--- 1. FIX LỖI NGHẼN (QUEUE EXHAUSTED)
--- Tắt bớt log rác từ game để script có chỗ chạy
-RunService:SetThirdPartySettingEnabled(false)
-
--- 2. DỌN UI CŨ (Dùng pcall để tránh lỗi nil)
-pcall(function()
-    for _, v in pairs({"WindUI", "FixMenuMobilePC"}) do
-        local old = CoreGui:FindFirstChild(v) or PlayerGui:FindFirstChild(v)
-        if old then old:Destroy() end
-    end
-end)
-
--- 3. LOAD THƯ VIỆN (Sửa cách gọi để không bị lỗi Line 15)
-local function GetLib()
-    local raw = "https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"
-    local s, r = pcall(function() return game:HttpGet(raw) end)
+-- 1. HÀM TẢI AN TOÀN (CHỐNG NIL VALUE)
+local function GetSource(url)
+    local s, r = pcall(function() return game:HttpGet(url) end)
     if s and r and #r > 1000 then return r end
     return nil
 end
 
-local source = GetLib()
-if not source then
-    -- Nếu nghẽn GitHub, báo lỗi lên màn hình thay vì im lặng
-    local h = Instance.new("Hint", workspace)
-    h.Text = "LỖI: MẠNG CHẶN GITHUB. HÃY BẬT 1.1.1.1 (VPN) ĐỂ HIỆN MENU!"
-    task.wait(5)
-    h:Destroy()
+-- Thử tải link Raw trước (Ổn định nhất)
+local LibrarySource = GetSource("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua")
+
+-- Nếu thất bại, thử link Release
+if not LibrarySource then
+    LibrarySource = GetSource("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")
+end
+
+-- KIỂM TRA CUỐI CÙNG TRƯỚC KHI GỌI
+if not LibrarySource then
+    -- Nếu hoàn toàn không tải được, hiện thông báo thay vì crash script
+    local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+    local TextLabel = Instance.new("TextLabel", ScreenGui)
+    TextLabel.Size = UDim2.new(1, 0, 0, 100)
+    TextLabel.Position = UDim2.new(0, 0, 0.4, 0)
+    TextLabel.Text = "LỖI KẾT NỐI: KHÔNG TẢI ĐƯỢC GIAO DIỆN.\nHÃY BẬT 1.1.1.1 (VPN) RỒI CHẠY LẠI SCRIPT!"
+    TextLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    TextLabel.TextColor3 = Color3.new(1, 1, 1)
     return
 end
 
-local WindUI = loadstring(source)()
+-- Chạy thư viện sau khi đã xác nhận source tồn tại
+local WindUI = loadstring(LibrarySource)()
 
--- 4. KHỞI TẠO WINDOW
+-- 2. KHỞI TẠO WINDOW
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub",
     Size = UDim2.fromOffset(450, 280),
     Theme = "Dark",
-    Icon = "rbxassetid://115375388153325", -- Thêm Icon cho giống bản gốc
 })
 
--- 5. GUI MOBILE (Fix Parent an toàn)
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FixMenuMobilePC"
-ScreenGui.ResetOnSpawn = false -- Giữ nút khi bạn chết (rất quan trọng)
+-- 3. NÚT MENU (KÉO THẢ THỦ CÔNG)
+local sg = Instance.new("ScreenGui")
+sg.Name = "FixMenuMobilePC"
+sg.ResetOnSpawn = false
+pcall(function() sg.Parent = CoreGui end)
+if not sg.Parent then sg.Parent = PlayerGui end
 
--- Ưu tiên vào CoreGui cho mượt, nếu Executor lỏ thì vào PlayerGui
-local successParent = pcall(function() ScreenGui.Parent = CoreGui end)
-if not successParent then ScreenGui.Parent = PlayerGui end
+local btn = Instance.new("TextButton", sg)
+btn.Size = UDim2.new(0, 50, 0, 50)
+btn.Position = UDim2.new(0, 10, 0.45, 0)
+btn.Text = "MENU"
+btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+btn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 
-local OpenButton = Instance.new("TextButton")
-OpenButton.Parent = ScreenGui
-OpenButton.Size = UDim2.new(0, 50, 0, 50)
-OpenButton.Position = UDim2.new(0, 10, 0.45, 0)
-OpenButton.Text = "MENU"
-OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-OpenButton.BackgroundTransparency = 0.3
-OpenButton.TextColor3 = Color3.new(1, 1, 1)
-OpenButton.Font = Enum.Font.GothamBold
-OpenButton.TextSize = 10
-
-Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(1, 0)
-
--- Click để Toggle
-OpenButton.MouseButton1Click:Connect(function()
-    Window:Toggle()
-end)
-
--- 6. PHÍM TẮT & FIX KÉO NÚT (DRAGGABLE)
-local dragging, dragInput, dragStart, startPos
-OpenButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true dragStart = input.Position startPos = OpenButton.Position
+-- Click & Drag Fix
+local dragging, dragStart, startPos
+btn.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dragging = true dragStart = i.Position startPos = btn.Position
     end
 end)
-UIS.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        OpenButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+UIS.InputChanged:Connect(function(i)
+    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local delta = i.Position - dragStart
+        btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-end)
+UIS.InputEnded:Connect(function(i) dragging = false end)
 
-UIS.InputBegan:Connect(function(input, gp)
-    if not gp and input.KeyCode == Enum.KeyCode.LeftControl then
-        Window:Toggle()
-    end
-end)
+btn.MouseButton1Click:Connect(function() Window:Toggle() end)
 
-WindUI:Notify({
-    Title = "Thành công",
-    Content = "Menu đã sẵn sàng!",
-    Duration = 4
-})
+WindUI:Notify({Title = "Thành công", Content = "Menu đã sẵn sàng!", Duration = 3})
 
 local Tabs = {
     InfoTab = Window:Tab({
