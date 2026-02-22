@@ -1,27 +1,32 @@
-if not game:IsLoaded() then
-    repeat task.wait() until game:IsLoaded()
+-- Xóa 3 dòng đầu (đoạn repeat wait) đi vì nó hay gây kẹt trên Mobile
+if not game:IsLoaded() then 
+    pcall(function() repeat task.wait() until game:IsLoaded() end) 
 end
 
--- 1. DỌN DẸP UI CŨ
+-- 1. CHỐNG CRASH
+if setfpscap then pcall(function() setfpscap(60) end) end 
+
+-- 2. DỌN DẸP UI CŨ
 local function CleanUI(name)
-    local ui = game:GetService("CoreGui"):FindFirstChild(name) or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild(name)
+    local ui = game:GetService("CoreGui"):FindFirstChild(name) or game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild(name)
     if ui then ui:Destroy() end
 end
 CleanUI("WindUI")
 
--- 2. DÙNG LINK THƯ VIỆN MỚI (Đây là phần quan trọng nhất để lên menu)
+-- 3. SỬA LINK THƯ VIỆN (CHỖ NÀY LÀ QUAN TRỌNG NHẤT)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub", 
+    Title = "Nullix Hub [1]",
     Icon = "rbxassetid://115375388153325",
-    Author = "Mhuy",
-    Folder = "NullixHub",
+    Author = "Owner: Mhuy",
+    Folder = "Nullix Hub",
     Size = UDim2.fromOffset(550, 300),
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 190,
-    HasOutline = true,
-    HideSearchBar = false,
+    HasOutline = true, -- Bật cái này lên cho dễ nhìn trên Mobile
+    HideSearchBar = true,
     ScrollBarEnabled = true,
     User = { Enabled = true, Anonymous = false },
 });
