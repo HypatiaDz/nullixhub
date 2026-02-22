@@ -11,7 +11,6 @@ CleanUI("WindUI")
 
 -- 2. DÙNG LINK THƯ VIỆN MỚI (Đây là phần quan trọng nhất để lên menu)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
-
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub", 
     Icon = "rbxassetid://115375388153325",
