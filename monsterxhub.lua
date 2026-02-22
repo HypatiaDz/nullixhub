@@ -2,32 +2,28 @@ if not game:IsLoaded() then
     repeat task.wait() until game:IsLoaded()
 end
 
--- 1. CHỐNG CRASH CHO PC & ĐIỆN THOẠI
-if setfpscap then setfpscap(60) end 
-
--- 2. DỌN DẸP UI CŨ (Để không bị chồng nhiều menu)
-local CoreGui = game:GetService("CoreGui")
+-- 1. DỌN DẸP UI CŨ
 local function CleanUI(name)
-    local ui = CoreGui:FindFirstChild(name) or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild(name)
+    local ui = game:GetService("CoreGui"):FindFirstChild(name) or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild(name)
     if ui then ui:Destroy() end
 end
 CleanUI("WindUI")
-CleanUI("FixMenuMobilePC")
 
--- 3. KHỞI TẠO MENU (WindUI)
-local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
+-- 2. DÙNG LINK THƯ VIỆN MỚI (Đây là phần quan trọng nhất để lên menu)
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub [1]",
+    Title = "Nullix Hub", 
     Icon = "rbxassetid://115375388153325",
-    Author = "Owner: Mhuy",
-    Folder = "Nullix Hub",
+    Author = "Mhuy",
+    Folder = "NullixHub",
     Size = UDim2.fromOffset(550, 300),
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 190,
-    HasOutline = false,
-    HideSearchBar = true,
-    ScrollBarEnabled = false,
+    HasOutline = true,
+    HideSearchBar = false,
+    ScrollBarEnabled = true,
     User = { Enabled = true, Anonymous = false },
 });
 
