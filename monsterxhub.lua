@@ -1,72 +1,70 @@
--- 1. GIẢI PHÓNG HÀNG ĐỢI
-local UIS = game:GetService("UserInputService")
+if not game:IsLoaded() then
+    repeat task.wait() until game:IsLoaded()
+end
+
+-- 1. CHỐNG CRASH CHO PC & ĐIỆN THOẠI
+if setfpscap then setfpscap(60) end 
+
+-- 2. DỌN DẸP UI CŨ (Để không bị chồng nhiều menu)
 local CoreGui = game:GetService("CoreGui")
-local LP = game:GetService("Players").LocalPlayer
-
--- Đợi 1 chút để Executor bình tĩnh lại sau khi nhấn nút
-task.wait(0.5)
-
--- 2. DỌN DẸP SẠCH SẼ
-pcall(function()
-    for _, v in pairs({"WindUI", "FixMenuMobilePC", "MobileFixUI"}) do
-        local old = CoreGui:FindFirstChild(v) or LP.PlayerGui:FindFirstChild(v)
-        if old then old:Destroy() end
-    end
-end)
-
--- 3. TẢI THƯ VIỆN QUA PROXY (CHỐNG CHẶN MẠNG)
-local function GetLib()
-    -- Sử dụng link qua stnd.sh hoặc gitmirror để không bị nhà mạng chặn
-    local urls = {
-        "https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua",
-        "https://raw.gitmirror.com/Footagesus/WindUI/main/main.lua" -- Link dự phòng
-    }
-    
-    for _, url in ipairs(urls) do
-        local s, r = pcall(function() return game:HttpGet(url) end)
-        if s and r and #r > 1000 then return r end
-    end
-    return nil
+local function CleanUI(name)
+    local ui = CoreGui:FindFirstChild(name) or game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild(name)
+    if ui then ui:Destroy() end
 end
+CleanUI("WindUI")
+CleanUI("FixMenuMobilePC")
 
-local source = GetLib()
-
-if not source then
-    -- Nếu vẫn không tải được, hiện thông báo ngay giữa màn hình
-    local sg = Instance.new("ScreenGui", LP.PlayerGui)
-    local l = Instance.new("TextLabel", sg)
-    l.Size = UDim2.new(1,0,0,50)
-    l.Position = UDim2.new(0,0,0.4,0)
-    l.Text = "LỖI MẠNG: HÃY BẬT 1.1.1.1 (WARP) RỒI CHẠY LẠI!"
-    l.BackgroundColor3 = Color3.new(1,0,0)
-    return
-end
-
-local WindUI = loadstring(source)()
-
--- 4. KHỞI TẠO WINDOW
+-- 3. KHỞI TẠO MENU (WindUI)
+local WindUI = (loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")))();
 local Window = WindUI:CreateWindow({
-    Title = "Monster X Hub",
-    Size = UDim2.fromOffset(450, 280),
+    Title = "Nullix Hub [1]",
+    Icon = "rbxassetid://115375388153325",
+    Author = "Owner: Mhuy",
+    Folder = "Nullix Hub",
+    Size = UDim2.fromOffset(550, 300),
+    Transparent = true,
     Theme = "Dark",
-})
+    SideBarWidth = 190,
+    HasOutline = false,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    User = { Enabled = true, Anonymous = false },
+});
 
--- 5. NÚT BẤM CƯỚNG BỨC (PHẢI HIỆN)
-local ScreenGui = Instance.new("ScreenGui", LP.PlayerGui)
+-- 4. TẠO NÚT BẬT/TẮT "BẤT TỬ" (Dùng cho cả Mobi và PC)
+local ScreenGui = Instance.new("ScreenGui")
+local OpenButton = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+
 ScreenGui.Name = "FixMenuMobilePC"
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local OpenButton = Instance.new("TextButton", ScreenGui)
-OpenButton.Size = UDim2.new(0, 55, 0, 55)
-OpenButton.Position = UDim2.new(0, 10, 0.45, 0)
+OpenButton.Name = "OpenButton"
+OpenButton.Parent = ScreenGui
+OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+OpenButton.BackgroundTransparency = 0.4
+OpenButton.Position = UDim2.new(0, 5, 0.4, 0) -- Nằm sát mép trái màn hình
+OpenButton.Size = UDim2.new(0, 50, 0, 50) -- Nút tròn vừa phải
+OpenButton.Font = Enum.Font.GothamBold
 OpenButton.Text = "MENU"
-OpenButton.BackgroundColor3 = Color3.new(0,0,0)
-OpenButton.BackgroundTransparency = 0.2
-OpenButton.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(1,0)
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.TextSize = 10
+OpenButton.Draggable = true -- Mobi hay PC đều kéo đi được nếu vướng
 
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = OpenButton
+
+-- Click nút này là hiện/ẩn Menu
 OpenButton.MouseButton1Click:Connect(function()
     Window:Toggle()
+end)
+
+-- 5. PHÍM TẮT RIÊNG CHO PC (Ctrl trái)
+game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
+        Window:Toggle()
+    end
 end)
 
 local Tabs = {
