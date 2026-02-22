@@ -1,10 +1,10 @@
--- 1. KHAI BÁO DỊCH VỤ (Rất quan trọng để không bị lỗi 'nil')
-local CoreGui = game:GetService("CoreGui")
+-- 1. KHAI BÁO HỆ THỐNG
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
 local LP = Players.LocalPlayer
 
--- Chống kẹt nếu game chưa load xong
+-- Đợi game load (chống kẹt)
 if not game:IsLoaded() then 
     pcall(function() repeat task.wait() until game:IsLoaded() end) 
 end
@@ -17,7 +17,7 @@ end
 CleanUI("WindUI")
 CleanUI("FixMenuMobilePC")
 
--- 3. TẢI THƯ VIỆN UI (Sửa thành link RAW để không bị lỗi 404)
+-- 3. TẢI THƯ VIỆN UI (DÙNG LINK RAW SIÊU ỔN ĐỊNH)
 local success, WindUI = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
 end)
@@ -43,13 +43,13 @@ local Window = WindUI:CreateWindow({
     User = { Enabled = true, Anonymous = false },
 })
 
--- 5. NÚT BẬT/TẮT MENU CHO MOBILE (Đã fix lỗi Parent)
+-- 5. NÚT BẬT/TẮT MENU (DÀNH CHO MOBILE)
 local ScreenGui = Instance.new("ScreenGui")
 local OpenButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
 ScreenGui.Name = "FixMenuMobilePC"
--- Kiểm tra quyền dán UI vào CoreGui hoặc PlayerGui
+-- Kiểm tra quyền dán UI vào CoreGui hoặc PlayerGui để không bị văng script
 local successGui = pcall(function() ScreenGui.Parent = CoreGui end)
 if not successGui then ScreenGui.Parent = LP:WaitForChild("PlayerGui") end
 
@@ -57,13 +57,14 @@ OpenButton.Name = "OpenButton"
 OpenButton.Parent = ScreenGui
 OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 OpenButton.BackgroundTransparency = 0.3
-OpenButton.Position = UDim2.new(0, 10, 0.45, 0)
-OpenButton.Size = UDim2.new(0, 55, 0, 55)
+OpenButton.Position = UDim2.new(0, 10, 0.45, 0) -- Nằm bên trái
+OpenButton.Size = UDim2.new(0, 50, 0, 50)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.Text = "MENU"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 OpenButton.TextSize = 12
-OpenButton.Draggable = true -- Có thể kéo nút trên màn hình
+OpenButton.Active = true
+OpenButton.Draggable = true 
 
 UICorner.CornerRadius = UDim.new(1, 0)
 UICorner.Parent = OpenButton
@@ -79,14 +80,12 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- THÔNG BÁO KHI CHẠY XONG
+-- Thông báo chạy thành công
 WindUI:Notify({
-    Title = "Monster X Hub",
-    Content = "Menu đã sẵn sàng! Nhấn nút 'MENU' để mở/ẩn.",
+    Title = "Thành công!",
+    Content = "Đã tải xong Menu. Nhấn nút 'MENU' để mở.",
     Duration = 5
-});
-
--- TIẾP TỤC CÁC PHẦN TẠO TAB (Tabs.MainTab...) CỦA BẠN Ở ĐÂY
+})
 local Tabs = {
     InfoTab = Window:Tab({
         Title = "Discord",
