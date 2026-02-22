@@ -1,17 +1,15 @@
--- 1. TỐI ƯU LOAD GAME
-if not game:IsLoaded() then 
-    pcall(function() repeat task.wait() until game:IsLoaded() end) 
-end
-
--- 2. KHAI BÁO DỊCH VỤ
+-- 1. KHAI BÁO HỆ THỐNG
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local LP = Players.LocalPlayer
 
--- 3. CHỐNG CRASH & DỌN UI CŨ
-if setfpscap then pcall(function() setfpscap(60) end) end 
+-- Chờ game load (bọc pcall để tránh kẹt)
+if not game:IsLoaded() then 
+    pcall(function() repeat task.wait() until game:IsLoaded() end) 
+end
 
+-- 2. DỌN DẸP UI CŨ
 local function CleanUI(name)
     local ui = CoreGui:FindFirstChild(name) or (LP and LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild(name))
     if ui then ui:Destroy() end
@@ -19,17 +17,17 @@ end
 CleanUI("WindUI")
 CleanUI("FixMenuMobilePC")
 
--- 4. TẢI THƯ VIỆN UI (LINK RAW ỔN ĐỊNH)
+-- 3. TẢI THƯ VIỆN UI (LINK RAW SIÊU ỔN ĐỊNH)
 local success, WindUI = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
 end)
 
 if not success or not WindUI then
-    warn("Không tải được thư viện UI! Hãy kiểm tra mạng hoặc VPN.")
+    warn("Lỗi: Không tải được giao diện. Kiểm tra internet/VPN!")
     return
 end
 
--- 5. KHỞI TẠO WINDOW
+-- 4. KHỞI TẠO MENU
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub [1]",
     Icon = "rbxassetid://115375388153325",
@@ -39,60 +37,57 @@ local Window = WindUI:CreateWindow({
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 190,
-    HasOutline = true,
+    HasOutline = true, -- Có viền cho đẹp trên Mobile
     HideSearchBar = true,
     ScrollBarEnabled = true,
     User = { Enabled = true, Anonymous = false },
 })
 
--- 6. TẠO NÚT MỞ MENU (FIX CHO MOBILE)
+-- 5. NÚT BẬT/TẮT MENU (DÀNH RIÊNG CHO MOBILE)
 local ScreenGui = Instance.new("ScreenGui")
 local OpenButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
 ScreenGui.Name = "FixMenuMobilePC"
--- Cố gắng cho vào CoreGui, nếu không được thì vào PlayerGui
-local successGui, err = pcall(function()
-    ScreenGui.Parent = CoreGui
-end)
-if not successGui then
-    ScreenGui.Parent = LP:WaitForChild("PlayerGui")
-end
+-- Kiểm tra quyền để dán UI vào nơi an toàn nhất
+local successGui = pcall(function() ScreenGui.Parent = CoreGui end)
+if not successGui then ScreenGui.Parent = LP:WaitForChild("PlayerGui") end
 
 OpenButton.Name = "OpenButton"
 OpenButton.Parent = ScreenGui
-OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-OpenButton.BackgroundTransparency = 0.4
-OpenButton.Position = UDim2.new(0, 10, 0.5, 0)
+OpenButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+OpenButton.BackgroundTransparency = 0.2
+OpenButton.Position = UDim2.new(0, 10, 0.4, 0) -- Vị trí bên trái màn hình
 OpenButton.Size = UDim2.new(0, 50, 0, 50)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.Text = "MENU"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 OpenButton.TextSize = 12
 OpenButton.Active = true
-OpenButton.Draggable = true -- Có thể kéo nút đi chỗ khác nếu vướng
+OpenButton.Draggable = true -- Bạn có thể kéo nút này đi chỗ khác
 
-UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.CornerRadius = UDim.new(1, 0) -- Nút tròn
 UICorner.Parent = OpenButton
 
 OpenButton.MouseButton1Click:Connect(function()
     Window:Toggle()
 end)
 
--- 7. PHÍM TẮT CHO PC
+-- 6. PHÍM TẮT CHO PC (CTRL TRÁI)
 UserInputService.InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
         Window:Toggle()
     end
 end)
 
--- THÔNG BÁO THÀNH CÔNG
+-- Thông báo cho người dùng
 WindUI:Notify({
-    Title = "Thành Công",
-    Content = "Menu đã sẵn sàng! Nhấn nút MENU hoặc Ctrl để mở.",
+    Title = "Monster X Hub",
+    Content = "Menu đã sẵn sàng! Nhấn nút MENU để mở.",
     Duration = 5
 })
 
+-- TIẾP TỤC CÁC PHẦN TẠO TAB (Tabs.MainTab...) CỦA BẠN Ở ĐÂY
 local Tabs = {
     InfoTab = Window:Tab({
         Title = "Discord",
