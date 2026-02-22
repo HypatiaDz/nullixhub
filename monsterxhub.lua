@@ -1,96 +1,73 @@
-local Players = game:GetService("Players")
+-- 1. GIẢI PHÓNG HÀNG ĐỢI
 local UIS = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-local LP = Players.LocalPlayer
-local PlayerGui = LP:WaitForChild("PlayerGui")
+local LP = game:GetService("Players").LocalPlayer
 
--- 1. HÀM TẢI AN TOÀN (Bọc thêm bẫy lỗi để tránh Nil Value)
-local function GetSource(url)
-    local s, r = pcall(function() return game:HttpGet(url) end)
-    -- Kiểm tra độ dài code để chắc chắn không phải trang 404 giả
-    if s and r and #r > 1000 and not r:find("404: Not Found") then 
-        return r 
+-- Đợi 1 chút để Executor bình tĩnh lại sau khi nhấn nút
+task.wait(0.5)
+
+-- 2. DỌN DẸP SẠCH SẼ
+pcall(function()
+    for _, v in pairs({"WindUI", "FixMenuMobilePC", "MobileFixUI"}) do
+        local old = CoreGui:FindFirstChild(v) or LP.PlayerGui:FindFirstChild(v)
+        if old then old:Destroy() end
+    end
+end)
+
+-- 3. TẢI THƯ VIỆN QUA PROXY (CHỐNG CHẶN MẠNG)
+local function GetLib()
+    -- Sử dụng link qua stnd.sh hoặc gitmirror để không bị nhà mạng chặn
+    local urls = {
+        "https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua",
+        "https://raw.gitmirror.com/Footagesus/WindUI/main/main.lua" -- Link dự phòng
+    }
+    
+    for _, url in ipairs(urls) do
+        local s, r = pcall(function() return game:HttpGet(url) end)
+        if s and r and #r > 1000 then return r end
     end
     return nil
 end
 
--- Ưu tiên link Raw ổn định
-local LibrarySource = GetSource("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua")
+local source = GetLib()
 
-if not LibrarySource then
-    LibrarySource = GetSource("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")
-end
-
--- KIỂM TRA CUỐI CÙNG
-if not LibrarySource then
-    local ScreenGui = Instance.new("ScreenGui", PlayerGui)
-    local TextLabel = Instance.new("TextLabel", ScreenGui)
-    TextLabel.Size = UDim2.new(1, 0, 0, 100)
-    TextLabel.Position = UDim2.new(0, 0, 0.4, 0)
-    TextLabel.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
-    TextLabel.TextColor3 = Color3.new(1, 1, 1)
-    TextLabel.TextSize = 15
-    TextLabel.Text = "LỖI KẾT NỐI GITHUB!\n1. HÃY BẬT 1.1.1.1 (VPN)\n2. KIỂM TRA MẠNG VÀ CHẠY LẠI"
+if not source then
+    -- Nếu vẫn không tải được, hiện thông báo ngay giữa màn hình
+    local sg = Instance.new("ScreenGui", LP.PlayerGui)
+    local l = Instance.new("TextLabel", sg)
+    l.Size = UDim2.new(1,0,0,50)
+    l.Position = UDim2.new(0,0,0.4,0)
+    l.Text = "LỖI MẠNG: HÃY BẬT 1.1.1.1 (WARP) RỒI CHẠY LẠI!"
+    l.BackgroundColor3 = Color3.new(1,0,0)
     return
 end
 
--- Chạy thư viện an toàn
-local WindUI = loadstring(LibrarySource)()
+local WindUI = loadstring(source)()
 
--- 2. KHỞI TẠO WINDOW
+-- 4. KHỞI TẠO WINDOW
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub",
+    Title = "Monster X Hub",
     Size = UDim2.fromOffset(450, 280),
     Theme = "Dark",
 })
 
--- 3. NÚT MENU (FIX DRAG CHO MOBILE MỚI)
-local sg = Instance.new("ScreenGui")
-sg.Name = "FixMenuMobilePC"
-sg.ResetOnSpawn = false
-pcall(function() sg.Parent = CoreGui end)
-if not sg.Parent then sg.Parent = PlayerGui end
+-- 5. NÚT BẤM CƯỚNG BỨC (PHẢI HIỆN)
+local ScreenGui = Instance.new("ScreenGui", LP.PlayerGui)
+ScreenGui.Name = "FixMenuMobilePC"
+ScreenGui.ResetOnSpawn = false
 
-local btn = Instance.new("TextButton", sg)
-btn.Size = UDim2.new(0, 50, 0, 50)
-btn.Position = UDim2.new(0, 10, 0.45, 0)
-btn.Text = "MENU"
-btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-btn.BackgroundTransparency = 0.3
-btn.TextColor3 = Color3.new(1, 1, 1)
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 10
-Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+local OpenButton = Instance.new("TextButton", ScreenGui)
+OpenButton.Size = UDim2.new(0, 55, 0, 55)
+OpenButton.Position = UDim2.new(0, 10, 0.45, 0)
+OpenButton.Text = "MENU"
+OpenButton.BackgroundColor3 = Color3.new(0,0,0)
+OpenButton.BackgroundTransparency = 0.2
+OpenButton.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(1,0)
 
--- Click & Drag Fix (Mượt hơn)
-local dragging, dragStart, startPos
-btn.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = i.Position
-        startPos = btn.Position
-        i.Changed:Connect(function()
-            if i.UserInputState == Enum.UserInputState.End then dragging = false end
-        end)
-    end
+OpenButton.MouseButton1Click:Connect(function()
+    Window:Toggle()
 end)
-UIS.InputChanged:Connect(function(i)
-    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-        local delta = i.Position - dragStart
-        btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-btn.MouseButton1Click:Connect(function() Window:Toggle() end)
-
--- PHÍM TẮT CHO PC
-UIS.InputBegan:Connect(function(input, gp)
-    if not gp and input.KeyCode == Enum.KeyCode.LeftControl then
-        Window:Toggle()
-    end
-end)
-
-WindUI:Notify({Title = "Thành công", Content = "Menu đã load xong!", Duration = 3})
 
 local Tabs = {
     InfoTab = Window:Tab({
