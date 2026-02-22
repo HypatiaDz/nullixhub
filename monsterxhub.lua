@@ -4,7 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local LP = Players.LocalPlayer
 
--- Đợi game load (chống kẹt)
+-- Đợi game load
 if not game:IsLoaded() then 
     pcall(function() repeat task.wait() until game:IsLoaded() end) 
 end
@@ -17,44 +17,51 @@ end
 CleanUI("WindUI")
 CleanUI("FixMenuMobilePC")
 
--- 3. TẢI THƯ VIỆN UI (DÙNG LINK RAW SIÊU ỔN ĐỊNH)
-local WindUI;
-local success, err = pcall(function()
-    -- Thử tải thư viện trong vòng 10 giây
-    for i = 1, 10 do
-        if WindUI then break end
-        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
-        if not WindUI then task.wait(1) end
-    end
-end)
+-- 3. TẢI THƯ VIỆN UI (FIX LẠI CÁCH TẢI)
+local function GetLibrary()
+    local raw = "https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(raw))()
+    end)
+    if success and result then return result end
+    return nil
+end
+
+local WindUI = GetLibrary()
 
 if not WindUI then
-    warn("KHÔNG TẢI ĐƯỢC MENU. LỖI: " .. tostring(err))
+    -- Nếu không tải được bằng link Raw, thử link dự phòng
+    warn("Đang thử link dự phòng...")
+    WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end
+
+if not WindUI then
+    warn("KHÔNG TẢI ĐƯỢC MENU. VUI LÒNG BẬT 1.1.1.1")
     return
 end
+
 -- 4. KHỞI TẠO WINDOW
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub [1]",
     Icon = "rbxassetid://115375388153325",
     Author = "Owner: Mhuy",
     Folder = "Nullix Hub",
-    Size = UDim2.fromOffset(550, 300),
+    Size = UDim2.fromOffset(480, 280), -- Chỉnh lại size cho Mobile dễ dùng
     Transparent = true,
     Theme = "Dark",
-    SideBarWidth = 190,
+    SideBarWidth = 170,
     HasOutline = true,
     HideSearchBar = true,
     ScrollBarEnabled = true,
     User = { Enabled = true, Anonymous = false },
 })
 
--- 5. NÚT BẬT/TẮT MENU (DÀNH CHO MOBILE)
+-- 5. NÚT BẬT/TẮT MENU (MOBILE FIX)
 local ScreenGui = Instance.new("ScreenGui")
 local OpenButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
 ScreenGui.Name = "FixMenuMobilePC"
--- Kiểm tra quyền dán UI vào CoreGui hoặc PlayerGui để không bị văng script
 local successGui = pcall(function() ScreenGui.Parent = CoreGui end)
 if not successGui then ScreenGui.Parent = LP:WaitForChild("PlayerGui") end
 
@@ -62,14 +69,39 @@ OpenButton.Name = "OpenButton"
 OpenButton.Parent = ScreenGui
 OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 OpenButton.BackgroundTransparency = 0.3
-OpenButton.Position = UDim2.new(0, 10, 0.45, 0) -- Nằm bên trái
+OpenButton.Position = UDim2.new(0, 10, 0.45, 0)
 OpenButton.Size = UDim2.new(0, 50, 0, 50)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.Text = "MENU"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 OpenButton.TextSize = 12
 OpenButton.Active = true
-OpenButton.Draggable = true 
+
+-- Fix Draggable cho Mobile hiện đại
+local dragging, dragInput, dragStart, startPos
+OpenButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = OpenButton.Position
+    end
+end)
+OpenButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        OpenButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+OpenButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
 
 UICorner.CornerRadius = UDim.new(1, 0)
 UICorner.Parent = OpenButton
@@ -78,14 +110,18 @@ OpenButton.MouseButton1Click:Connect(function()
     Window:Toggle()
 end)
 
--- 6. PHÍM TẮT CHO PC (CTRL)
+-- 6. PHÍM TẮT CHO PC
 UserInputService.InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
         Window:Toggle()
     end
 end)
 
--- Thông báo chạy thành công
+WindUI:Notify({
+    Title = "Thành công",
+    Content = "Menu đã sẵn sàng!",
+    Duration = 3
+})
 WindUI:Notify({
     Title = "Thành công!",
     Content = "Đã tải xong Menu. Nhấn nút 'MENU' để mở.",
