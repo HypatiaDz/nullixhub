@@ -1,21 +1,35 @@
--- Xóa 3 dòng đầu (đoạn repeat wait) đi vì nó hay gây kẹt trên Mobile
+-- 1. TỐI ƯU LOAD GAME
 if not game:IsLoaded() then 
     pcall(function() repeat task.wait() until game:IsLoaded() end) 
 end
 
--- 1. CHỐNG CRASH
+-- 2. KHAI BÁO DỊCH VỤ
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LP = Players.LocalPlayer
+
+-- 3. CHỐNG CRASH & DỌN UI CŨ
 if setfpscap then pcall(function() setfpscap(60) end) end 
 
--- 2. DỌN DẸP UI CŨ
 local function CleanUI(name)
-    local ui = game:GetService("CoreGui"):FindFirstChild(name) or game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild(name)
+    local ui = CoreGui:FindFirstChild(name) or (LP and LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild(name))
     if ui then ui:Destroy() end
 end
 CleanUI("WindUI")
+CleanUI("FixMenuMobilePC")
 
--- 3. SỬA LINK THƯ VIỆN (CHỖ NÀY LÀ QUAN TRỌNG NHẤT)
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+-- 4. TẢI THƯ VIỆN UI (LINK RAW ỔN ĐỊNH)
+local success, WindUI = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+end)
 
+if not success or not WindUI then
+    warn("Không tải được thư viện UI! Hãy kiểm tra mạng hoặc VPN.")
+    return
+end
+
+-- 5. KHỞI TẠO WINDOW
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub [1]",
     Icon = "rbxassetid://115375388153325",
@@ -25,49 +39,59 @@ local Window = WindUI:CreateWindow({
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 190,
-    HasOutline = true, -- Bật cái này lên cho dễ nhìn trên Mobile
+    HasOutline = true,
     HideSearchBar = true,
     ScrollBarEnabled = true,
     User = { Enabled = true, Anonymous = false },
-});
+})
 
--- 4. TẠO NÚT BẬT/TẮT "BẤT TỬ" (Dùng cho cả Mobi và PC)
+-- 6. TẠO NÚT MỞ MENU (FIX CHO MOBILE)
 local ScreenGui = Instance.new("ScreenGui")
 local OpenButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
 ScreenGui.Name = "FixMenuMobilePC"
-ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+-- Cố gắng cho vào CoreGui, nếu không được thì vào PlayerGui
+local successGui, err = pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+if not successGui then
+    ScreenGui.Parent = LP:WaitForChild("PlayerGui")
+end
 
 OpenButton.Name = "OpenButton"
 OpenButton.Parent = ScreenGui
 OpenButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 OpenButton.BackgroundTransparency = 0.4
-OpenButton.Position = UDim2.new(0, 5, 0.4, 0) -- Nằm sát mép trái màn hình
-OpenButton.Size = UDim2.new(0, 50, 0, 50) -- Nút tròn vừa phải
+OpenButton.Position = UDim2.new(0, 10, 0.5, 0)
+OpenButton.Size = UDim2.new(0, 50, 0, 50)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.Text = "MENU"
 OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.TextSize = 10
-OpenButton.Draggable = true -- Mobi hay PC đều kéo đi được nếu vướng
+OpenButton.TextSize = 12
+OpenButton.Active = true
+OpenButton.Draggable = true -- Có thể kéo nút đi chỗ khác nếu vướng
 
 UICorner.CornerRadius = UDim.new(1, 0)
 UICorner.Parent = OpenButton
 
--- Click nút này là hiện/ẩn Menu
 OpenButton.MouseButton1Click:Connect(function()
     Window:Toggle()
 end)
 
--- 5. PHÍM TẮT RIÊNG CHO PC (Ctrl trái)
-game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+-- 7. PHÍM TẮT CHO PC
+UserInputService.InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
         Window:Toggle()
     end
 end)
 
--- Tắt cái nút mặc định hay bị lỗi của thư
+-- THÔNG BÁO THÀNH CÔNG
+WindUI:Notify({
+    Title = "Thành Công",
+    Content = "Menu đã sẵn sàng! Nhấn nút MENU hoặc Ctrl để mở.",
+    Duration = 5
+})
 
 local Tabs = {
     InfoTab = Window:Tab({
