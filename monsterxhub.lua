@@ -1,74 +1,72 @@
--- 1. KHAI BÁO BIẾN AN TOÀN
 local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
--- 2. HÀM TẢI CODE CHỐNG NGHẼN (FIX LINE 15)
-local function SafeLoad(url)
-    local success, result = pcall(function()
-        return game:HttpGet(url)
-    end)
-    if success and result and #result > 100 then -- Kiểm tra xem code có tải về đủ không
-        return result
-    end
-    return nil
+local LP = Players.LocalPlayer
+if not LP then return end
+
+-- DỌN UI CŨ
+for _,v in pairs({"WindUI","FixMenuMobilePC"}) do
+    local old = CoreGui:FindFirstChild(v) 
+        or LP:WaitForChild("PlayerGui"):FindFirstChild(v)
+    if old then old:Destroy() end
 end
 
--- Thử tải link Raw trước vì nó nhẹ nhất
-local code = SafeLoad("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua")
+-- LOAD LIB
+local LibrarySource
+local success, result = pcall(function()
+    return game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua")
+end)
 
--- Nếu nghẽn, đợi 2 giây rồi thử link dự phòng
-if not code then
-    task.wait(2)
-    code = SafeLoad("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")
-end
-
--- 3. KIỂM TRA VÀ CHẠY
-if not code then
-    -- Hiện thông báo lỗi to giữa màn hình nếu hoàn toàn không tải được
-    local hint = Instance.new("Hint", workspace)
-    hint.Text = "LỖI LINE 15: KHÔNG KẾT NỐI ĐƯỢC GITHUB. HÃY BẬT 1.1.1.1 VÀ THỬ LẠI!"
-    task.wait(10)
-    hint:Destroy()
+if success then
+    LibrarySource = result
+else
+    warn("Không tải được WindUI")
     return
 end
 
-local WindUI = loadstring(code)()
+local WindUI = loadstring(LibrarySource)()
 
--- 4. KHỞI TẠO WINDOW (SỬA SIZE CHO MOBILE)
+-- WINDOW
 local Window = WindUI:CreateWindow({
-    Title = "Nullix Hub [FIXED]",
-    Icon = "rbxassetid://115375388153325",
-    Author = "Owner: Mhuy",
-    Folder = "Nullix_Fix",
-    Size = UDim2.fromOffset(450, 280),
-    Transparent = true,
+    Title = "Nullix Hub",
+    Size = UDim2.fromOffset(450,280),
     Theme = "Dark",
-    SideBarWidth = 170,
-    HasOutline = true,
-    HideSearchBar = true,
-    ScrollBarEnabled = true,
-    User = { Enabled = true, Anonymous = false },
 })
 
--- 5. NÚT MENU (KÉO THẢ ĐƯỢC)
-local sg = Instance.new("ScreenGui")
-sg.Name = "MobileFixUI"
-pcall(function() sg.Parent = CoreGui end)
-if not sg.Parent then sg.Parent = LP:WaitForChild("PlayerGui") end
+-- GUI MOBILE
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FixMenuMobilePC"
+ScreenGui.Parent = LP:WaitForChild("PlayerGui")
 
-local btn = Instance.new("TextButton", sg)
-btn.Size = UDim2.new(0, 50, 0, 50)
-btn.Position = UDim2.new(0, 10, 0.5, 0)
-btn.Text = "MENU"
-btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-btn.TextColor3 = Color3.fromRGB(255,255,255)
-Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
+local OpenButton = Instance.new("TextButton")
+OpenButton.Parent = ScreenGui
+OpenButton.Size = UDim2.new(0,50,0,50)
+OpenButton.Position = UDim2.new(0,10,0.45,0)
+OpenButton.Text = "MENU"
+OpenButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
+OpenButton.TextColor3 = Color3.new(1,1,1)
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.TextSize = 12
 
-btn.MouseButton1Click:Connect(function() Window:Toggle() end)
+Instance.new("UICorner",OpenButton).CornerRadius = UDim.new(1,0)
 
-WindUI:Notify({Title = "Thành công", Content = "Đã vượt qua lỗi Line 15!", Duration = 5})
+OpenButton.MouseButton1Click:Connect(function()
+    Window:Toggle()
+end)
+
+-- PHÍM TẮT
+UIS.InputBegan:Connect(function(input,gp)
+    if not gp and input.KeyCode == Enum.KeyCode.LeftControl then
+        Window:Toggle()
+    end
+end)
+
+WindUI:Notify({
+    Title = "Thành công",
+    Content = "Menu đã load!",
+    Duration = 4
+})
 
 local Tabs = {
     InfoTab = Window:Tab({
