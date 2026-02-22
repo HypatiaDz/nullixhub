@@ -18,15 +18,20 @@ CleanUI("WindUI")
 CleanUI("FixMenuMobilePC")
 
 -- 3. TẢI THƯ VIỆN UI (DÙNG LINK RAW SIÊU ỔN ĐỊNH)
-local success, WindUI = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+local WindUI;
+local success, err = pcall(function()
+    -- Thử tải thư viện trong vòng 10 giây
+    for i = 1, 10 do
+        if WindUI then break end
+        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+        if not WindUI then task.wait(1) end
+    end
 end)
 
-if not success or not WindUI then
-    warn("Lỗi: Không tải được giao diện. Hãy bật VPN (1.1.1.1)!")
+if not WindUI then
+    warn("KHÔNG TẢI ĐƯỢC MENU. LỖI: " .. tostring(err))
     return
 end
-
 -- 4. KHỞI TẠO WINDOW
 local Window = WindUI:CreateWindow({
     Title = "Nullix Hub [1]",
