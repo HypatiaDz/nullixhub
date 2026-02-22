@@ -4,35 +4,37 @@ local CoreGui = game:GetService("CoreGui")
 local LP = Players.LocalPlayer
 local PlayerGui = LP:WaitForChild("PlayerGui")
 
--- 1. HÀM TẢI AN TOÀN (CHỐNG NIL VALUE)
+-- 1. HÀM TẢI AN TOÀN (Bọc thêm bẫy lỗi để tránh Nil Value)
 local function GetSource(url)
     local s, r = pcall(function() return game:HttpGet(url) end)
-    if s and r and #r > 1000 then return r end
+    -- Kiểm tra độ dài code để chắc chắn không phải trang 404 giả
+    if s and r and #r > 1000 and not r:find("404: Not Found") then 
+        return r 
+    end
     return nil
 end
 
--- Thử tải link Raw trước (Ổn định nhất)
+-- Ưu tiên link Raw ổn định
 local LibrarySource = GetSource("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua")
 
--- Nếu thất bại, thử link Release
 if not LibrarySource then
     LibrarySource = GetSource("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua")
 end
 
--- KIỂM TRA CUỐI CÙNG TRƯỚC KHI GỌI
+-- KIỂM TRA CUỐI CÙNG
 if not LibrarySource then
-    -- Nếu hoàn toàn không tải được, hiện thông báo thay vì crash script
     local ScreenGui = Instance.new("ScreenGui", PlayerGui)
     local TextLabel = Instance.new("TextLabel", ScreenGui)
     TextLabel.Size = UDim2.new(1, 0, 0, 100)
     TextLabel.Position = UDim2.new(0, 0, 0.4, 0)
-    TextLabel.Text = "LỖI KẾT NỐI: KHÔNG TẢI ĐƯỢC GIAO DIỆN.\nHÃY BẬT 1.1.1.1 (VPN) RỒI CHẠY LẠI SCRIPT!"
-    TextLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    TextLabel.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     TextLabel.TextColor3 = Color3.new(1, 1, 1)
+    TextLabel.TextSize = 15
+    TextLabel.Text = "LỖI KẾT NỐI GITHUB!\n1. HÃY BẬT 1.1.1.1 (VPN)\n2. KIỂM TRA MẠNG VÀ CHẠY LẠI"
     return
 end
 
--- Chạy thư viện sau khi đã xác nhận source tồn tại
+-- Chạy thư viện an toàn
 local WindUI = loadstring(LibrarySource)()
 
 -- 2. KHỞI TẠO WINDOW
@@ -42,7 +44,7 @@ local Window = WindUI:CreateWindow({
     Theme = "Dark",
 })
 
--- 3. NÚT MENU (KÉO THẢ THỦ CÔNG)
+-- 3. NÚT MENU (FIX DRAG CHO MOBILE MỚI)
 local sg = Instance.new("ScreenGui")
 sg.Name = "FixMenuMobilePC"
 sg.ResetOnSpawn = false
@@ -54,14 +56,22 @@ btn.Size = UDim2.new(0, 50, 0, 50)
 btn.Position = UDim2.new(0, 10, 0.45, 0)
 btn.Text = "MENU"
 btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+btn.BackgroundTransparency = 0.3
 btn.TextColor3 = Color3.new(1, 1, 1)
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 10
 Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 
--- Click & Drag Fix
+-- Click & Drag Fix (Mượt hơn)
 local dragging, dragStart, startPos
 btn.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        dragging = true dragStart = i.Position startPos = btn.Position
+        dragging = true
+        dragStart = i.Position
+        startPos = btn.Position
+        i.Changed:Connect(function()
+            if i.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
     end
 end)
 UIS.InputChanged:Connect(function(i)
@@ -70,11 +80,17 @@ UIS.InputChanged:Connect(function(i)
         btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-UIS.InputEnded:Connect(function(i) dragging = false end)
 
 btn.MouseButton1Click:Connect(function() Window:Toggle() end)
 
-WindUI:Notify({Title = "Thành công", Content = "Menu đã sẵn sàng!", Duration = 3})
+-- PHÍM TẮT CHO PC
+UIS.InputBegan:Connect(function(input, gp)
+    if not gp and input.KeyCode == Enum.KeyCode.LeftControl then
+        Window:Toggle()
+    end
+end)
+
+WindUI:Notify({Title = "Thành công", Content = "Menu đã load xong!", Duration = 3})
 
 local Tabs = {
     InfoTab = Window:Tab({
